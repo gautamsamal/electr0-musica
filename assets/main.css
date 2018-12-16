@@ -1,0 +1,47 @@
+#editor .tracks{
+    width: 100px;
+    float: left;
+    border-right: 2px solid #fff;
+}
+#editor .tracks>div,
+#editor .timeline>div{
+    height: 30px;
+    color: #fff;
+    background: #7a9b76;
+}
+#editor .tracks>div:nth-child(even),
+#editor .timeline>div:nth-child(even){
+    background: #7a9b76;
+}
+#editor .tracks>div:nth-child(odd),
+#editor .timeline>div:nth-child(odd){
+    background: #59745d;
+}
+#editor .tracks>div:first-child,
+#editor .timeline>div:first-child{
+    background: #343a40;
+}
+#editor .scale-sec{
+    display: inline-block;
+    border-left: 1px solid #fff;
+    padding-left: 5px;
+    height: 30px;
+}
+#editor .scale-sec:first-child{
+    border: none;
+}
+#editor .timeline{
+    overflow: auto;
+}
+.tracker{
+    display: inline-block;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-weight: 100;
+    font-size: 13px;
+    background: #8001015c;
+    text-align: center;
+    min-height: 100%;
+    line-height:2;
+    cursor: pointer;
+}

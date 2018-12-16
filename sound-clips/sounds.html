@@ -1,0 +1,18 @@
+<style>
+    #basic-keys{
+        text-align: center;
+    }
+    #basic-keys .all-keys button{
+        margin-right: 7px;
+        margin-bottom: 7px;
+    }
+</style>
+<div id="basic-keys" ng-controller="SoundCtrl">
+    <h3>Basic Notes</h3>
+    <div class="jumbotron all-keys" style="max-width: 90%;margin: auto;">
+        <button type="button" class="btn btn-dark" ng-repeat="note in allNotes" ng-click="playNote(note)">{{note}}</button>
+    </div>
+    <br />
+    <button ng-click="playAllNotes()" class="btn btn-primary">Play All</button>
+    <button ng-click="stopPlayback()" class="btn btn-primary">Stop Playback</button>
+</div>
