@@ -1,0 +1,28 @@
+<div id="editor" ng-controller="MainLineCtrl">
+    <h3 class="text-center">Main Line</h3>
+    <h5 ng-if="controlFlags.ready" class="text-center text-success">Ready</h5>
+    <h5 ng-if="!controlFlags.ready" class="text-center text-danger">Not Ready</h5>
+    <div class="jumbotron" style="max-width: 90%;margin: auto;">
+        <div id="editor-panel">
+            <div class="tracks">
+                <div>
+                    XX
+                </div>
+            </div>
+            <div class="timeline">
+                <div class="scale">
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr />
+    <div>
+        <button class="btn btn-primary" ng-click="addTrack()">Add Track</button>
+    </div>
+    <div>
+        JSON configuration
+        <hr />
+        <pre>{{configuration | json}}</pre>
+    </div>
+</div>

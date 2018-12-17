@@ -12,6 +12,7 @@ mainApp.run(($rootScope) => {
 
 mainApp.controller('MainCtrl', ($rootScope, $scope) => {
     // $scope.appMode = 'Sounds';
-    $scope.appMode = 'Editor';
+    // $scope.appMode = 'Editor';
+    $scope.appMode = 'MainLine';
 });
 
