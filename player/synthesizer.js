@@ -216,18 +216,13 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
     };
 
     service.getChannel = function () {
-        // return {
-        //     gain: new GainADSR(),
-        //     frequency: new FrequencyStream(),
-        //     delay: 0,
-        //     wave: 'sine',
-        //     type: 'osc',
-        //     loop: true
-        // }
         return {
             gain: new GainADSR(),
+            frequency: new FrequencyStream(),
             delay: 0,
-            type: 'noise'
+            wave: 'sine',
+            type: 'osc',
+            loop: true
         }
     };
 
