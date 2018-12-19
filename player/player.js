@@ -2,6 +2,10 @@ angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, SynthFac
 
     $scope.channels = [];
 
+    $scope.loadSample = function () {
+        $scope.channels = SynthFactory.getSampleTracks();
+    }
+
     $scope.newChannel = function () {
         $scope.channels.push(SynthFactory.getChannel());
     }

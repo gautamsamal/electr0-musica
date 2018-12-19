@@ -238,6 +238,17 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
         return channel;
     };
 
+    service.getSampleTracks = function () {
+        const origChannels = SynthJSONFactory.full.sample;
+
+        return origChannels.map(c => {
+            const channel = angular.copy(c);
+            channel.gain = channel.gain ? GainADSR.parseJSON(channel.gain) : new GainADSR();
+            channel.frequency = channel.frequency ? FrequencyStream.parseJSON(channel.frequency) : new FrequencyStream();
+            return channel;
+        });
+    };
+
     service.playChannels = function (channels) {
         const context = new AudioContext;
         service.currentContext = context;

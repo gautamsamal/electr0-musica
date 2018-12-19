@@ -1,4 +1,7 @@
 <style>
+    #Synthesizer{
+        margin-bottom: 30px;
+    }
     .channel-panel {
         padding: 15px;
         background: #dbdbdb1c;
@@ -13,9 +16,54 @@
     input[type=range]{
         width: 100%;
     }
+    #Synthesizer{
+     margin-bottom: 30px;
+}
+ .channel-panel {
+     padding: 15px;
+     background: #dbdbdb1c;
+     border: 1px solid #dbdbdb;
+     width: 95%;
+     margin: auto;
+     margin-bottom: 10px;
+}
+ .time-input{
+     width: 80px;
+}
+ input[type=range]{
+     width: 100%;
+}
+ .logo {
+     margin-top: 50px;
+    /* width: 50px;
+     */
+     height: 50px;
+     border: none;
+     animation: bounce 1s infinite alternate;
+     -webkit-animation: bounce 1s infinite alternate;
+     margin-left: auto;
+     margin-right: auto;
+}
+ @keyframes bounce {
+     from {
+         transform: translateY(0px);
+    }
+     to {
+         transform: translateY(-15px);
+    }
+}
+ @-webkit-keyframes bounce {
+     from {
+         transform: translateY(0px);
+    }
+     to {
+         transform: translateY(-15px);
+    }
+}
+
 </style>
-<div ng-controller="PlayerCtrl">
-    <h3 class="text-center">Synthesizer 1.0</h3>
+<div ng-controller="PlayerCtrl" id="Synthesizer">
+    <h3 class="text-center logo">Synthesizer 1.0 <span>&#9835;</span></h3>
     <br />
     <h4>Channels</h4>
     <div class="float-right" style="padding: 10px;background: #add8e6;margin-top: -50px;">
@@ -186,5 +234,10 @@
         <button class="btn btn-success" ng-click="pause()">Pause</button>
         <button class="btn btn-success" ng-click="resume()">Resume</button>
         <button class="btn btn-success" ng-click="stop()">Stop</button>
+    </div>
+    <br /><br />
+    <div class="text-center">
+        <button class="btn btn-info" ng-click="loadSample()">Too hard? Load a sample</button>
+
     </div>
 </div>

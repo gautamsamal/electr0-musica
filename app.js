@@ -1,7 +1,7 @@
 const mainApp = angular.module('mainApp', []);
 
 mainApp.run(($rootScope) => {
-    $rootScope.appName = 'Electro Musica :)';
+    $rootScope.appName = 'Electro Musica';
     $rootScope.keyNotes = {};
 
     // Load notes JSON
