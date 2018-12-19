@@ -27,7 +27,7 @@ class GainADSR {
         return parseFloat((this.a + this.d + this.r).toFixed(2));
     }
 
-    setup(context, source, delay = 0) {
+    setup(context, source, delay = 0, duration) {
         this.context = context;
         this.gain = this.context.createGain();
         if (source) {
@@ -36,9 +36,19 @@ class GainADSR {
         }
 
         this.gain.gain.value = 0;
-        this.gain.gain.exponentialRampToValueAtTime(1, delay + this.a);
+        if (!this.a || this.a === 0) {
+            this.a = 0;
+            this.gain.gain.setValueAtTime(1, delay);
+        } else {
+            this.gain.gain.exponentialRampToValueAtTime(1, delay + this.a);
+        }
         this.gain.gain.exponentialRampToValueAtTime(this.s, delay + this.a + this.d);
-        this.gain.gain.exponentialRampToValueAtTime(0.001, delay + this.a + this.d + this.r);
+        if (this.r && this.r > 0) {
+            this.gain.gain.exponentialRampToValueAtTime(0.001, delay + this.a + this.d + this.r);
+        } else if (duration && duration > 0) {
+            this.gain.gain.exponentialRampToValueAtTime(0.001, delay + this.a + this.d + duration);
+        }
+
     }
 
     connectOutput() {
@@ -135,10 +145,22 @@ class Oscillator extends AudioBeat {
     }
 }
 
-class Noise extends AudioBeat {
-    constructor(context) {
-        super(context);
-        this.createBufferSource();
+class BufferPlayer extends AudioBeat {
+    constructor(context, type, delay = 0, duration, loop, playbackrate = 1) {
+        super(context, delay, duration);
+        this.loop = loop;
+        this.type = type;
+        this.audioBuffer = this.context.createBufferSource();
+        // Not applicable for noise buffer.
+        if (this.type === 'noise') {
+            return;
+        }
+        if (this.loop) {
+            this.audioBuffer.loop = true;
+        }
+        if (playbackrate && !isNaN(playbackrate)) {
+            this.audioBuffer.playbackRate.value = parseFloat(playbackrate);
+        }
     }
 
     createBufferSource() {
@@ -157,30 +179,55 @@ class Noise extends AudioBeat {
             }
         }
 
-        this.buffer = arrayBuffer;
+        return arrayBuffer;
+    }
+
+    getBufferSourceNode() {
+        return this.audioBuffer;
+    }
+
+    setupGain(gainADSR) {
+        this.gainADSR = gainADSR;
+        this.gainADSR.setup(this.context, this.audioBuffer, this.delay);
+        if (!this.duration) {
+            this.duration = this.gainADSR.gainDuration;
+        }
+        this.gainADSR.connectOutput();
+    }
+
+    playNoise(gainADSR) {
+        if (!this.duration) {
+            this.duration = gainADSR.gainDuration;
+        }
+        this.audioBuffer.buffer = this.createBufferSource();
+        this.setupGain(gainADSR);
+        this.audioBuffer.start(this.delay);
+        // No need to stop as the buffer automatically will run out.
+        // this.audioBuffer.stop(this.delay + this.duration);
     }
 }
 
-class StramBuffer extends AudioBeat {
-    constructor(context, buffer) {
-        super(context);
-        this.buffer = buffer;
-    }
-}
-
+/**
+ * Angular Factory
+ */
 angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory) => {
     const service = {
         currentContext: null
     };
 
     service.getChannel = function () {
+        // return {
+        //     gain: new GainADSR(),
+        //     frequency: new FrequencyStream(),
+        //     delay: 0,
+        //     wave: 'sine',
+        //     type: 'osc',
+        //     loop: true
+        // }
         return {
             gain: new GainADSR(),
-            frequency: new FrequencyStream(),
             delay: 0,
-            wave: 'sine',
-            type: 'osc',
-            loop: true
+            type: 'noise'
         }
     };
 
@@ -207,6 +254,12 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
                 const copyChannel = angular.copy(channel);
                 copyChannel.originalDelay = channel.delay;
                 _playOscChannel(context, copyChannel);
+            }
+
+            if (channel.type === 'noise') {
+                const copyChannel = angular.copy(channel);
+                copyChannel.originalDelay = channel.delay;
+                _playNoiseChannel(context, copyChannel);
             }
         });
     };
@@ -239,7 +292,6 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
 
         // Oscillator
         const osc = new Oscillator(context, channel.wave, channel.delay, channel.duration);
-        console.log(context.currentTime);
         const oscillator = osc.getOsc();
         oscillator.onended = function () {
             console.log('OSC Ended', context.currentTime);
@@ -250,5 +302,27 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
         };
         osc.play(channel.gain, channel.frequency);
     };
+
+    function _playNoiseChannel(context, channel) {
+        // For loop count
+        if (!channel.loopCount) {
+            channel.loopCount = 0;
+        }
+        channel.loopCount++;
+        // Noise
+        const noise = new BufferPlayer(context, channel.type, channel.delay, channel.duration, channel.loop);
+        const bufferNode = noise.getBufferSourceNode();
+        bufferNode.onended = function () {
+            console.log('Buffer Ended', context.currentTime);
+            if (channel.loop) {
+                channel.delay = context.currentTime + channel.originalDelay;
+                _playNoiseChannel(context, channel);
+            }
+        };
+
+        // Will create a new buffer if not provided.
+        noise.playNoise(channel.gain);
+    };
+
     return service;
 });
