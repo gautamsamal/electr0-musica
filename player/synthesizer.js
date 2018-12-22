@@ -52,7 +52,9 @@ class GainADSR {
             this.gain.gain.exponentialRampToValueAtTime(this.amp, offSet + this.a);
         }
         // Sustain
-        this.gain.gain.exponentialRampToValueAtTime(this.s, offSet + this.a + this.d);
+        if (this.d && this.d > 0) {
+            this.gain.gain.exponentialRampToValueAtTime(this.s, offSet + this.a + this.d);
+        }
         // Decay
         if (this.r && this.r > 0) {
             this.gain.gain.exponentialRampToValueAtTime(0.001, offSet + this.a + this.d + this.r);
@@ -175,6 +177,23 @@ class BufferPlayer extends AudioBeat {
         }
     }
 
+    static loadFromHTTP(url, context, callback) {
+        var request = new XMLHttpRequest();
+        request.open('get', url, true);
+        request.responseType = 'arraybuffer';
+
+        request.onload = function () {
+            context.decodeAudioData(request.response, function (buffer) {
+                callback(null, buffer);
+            });
+        };
+        request.onerror = function (err) {
+            console.log("** An error occurred during the transaction");
+            callback(err)
+        };
+        request.send();
+    };
+
     createBufferSource() {
         // Create an empty (duration) stereo/mono buffer at the sample rate of the AudioContext
         const arrayBuffer = this.context.createBuffer(this.context.destination.channelCount, this.context.sampleRate * this.duration, this.context.sampleRate);
@@ -200,10 +219,7 @@ class BufferPlayer extends AudioBeat {
 
     setupGain(gainADSR) {
         this.gainADSR = gainADSR;
-        this.gainADSR.setup(this.context, this.audioBuffer, this.offSet);
-        if (!this.duration) {
-            this.duration = this.gainADSR.gainDuration;
-        }
+        this.gainADSR.setup(this.context, this.audioBuffer, this.offSet, this.duration);
         this.gainADSR.connectOutput();
     }
 
@@ -212,6 +228,15 @@ class BufferPlayer extends AudioBeat {
             this.duration = gainADSR.gainDuration;
         }
         this.audioBuffer.buffer = this.createBufferSource();
+        this.setupGain(gainADSR);
+        this.audioBuffer.start(this.offSet);
+        this.audioBuffer.stop(this.offSet + this.duration);
+        console.log('Noise would satrt at', this.offSet);
+        console.log('Noise would stop at', this.offSet + this.duration);
+    }
+
+    playFromBuffer(buffer, gainADSR) {
+        this.audioBuffer.buffer = buffer;
         this.setupGain(gainADSR);
         this.audioBuffer.start(this.offSet);
         this.audioBuffer.stop(this.offSet + this.duration);
@@ -230,6 +255,8 @@ class AudioChannel {
         this.loop = false;
         this.startAfter = 0;
         this.duration = 0;
+        this.url;
+        this.playbackrate = 1;
         this.timerWorker;
     }
 
@@ -239,6 +266,21 @@ class AudioChannel {
         instance.gain = instance.gain ? GainADSR.parseJSON(instance.gain) : new GainADSR();
         instance.frequency = instance.frequency ? FrequencyStream.parseJSON(instance.frequency) : new FrequencyStream();
         return instance;
+    }
+
+    preConfigure(context) {
+        return new Promise((resolve, reject) => {
+            if (this.type === 'external') {
+                return BufferPlayer.loadFromHTTP(this.url, context, (err, buffer) => {
+                    this.buffer = buffer;
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve();
+                });
+            }
+            return resolve();
+        })
     }
 
     /**
@@ -258,6 +300,10 @@ class AudioChannel {
 
         if (this.type === 'noise') {
             playback = this._playNoiseChannel;
+        }
+
+        if (this.type === 'external') {
+            playback = this._playExternalChannel;
         }
 
         playback.call(this, context);
@@ -366,6 +412,24 @@ class AudioChannel {
         // Will create a new buffer if not provided.
         noise.playNoise(this.gain);
     };
+
+    _playExternalChannel(context) {
+        // For loop count
+        if (!this.loopCount) {
+            this.loopCount = 0;
+        }
+        this.loopCount++;
+        // Noise
+        console.log('EXTERNAL config', this);
+        const buffPlayer = new BufferPlayer(context, this.type, this.delay, this.duration, this.startAfter, this.loop);
+        const bufferNode = buffPlayer.getBufferSourceNode();
+        bufferNode.onended = function () {
+            console.log('Buffer Player Ended', context.currentTime);
+        };
+
+        // Will create a new buffer if not provided.
+        buffPlayer.playFromBuffer(this.buffer, this.gain);
+    };
 }
 
 /**
@@ -377,6 +441,7 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
     };
 
     let timerWorkers = [];
+    let promiseArray = [];
 
     service.getChannel = function () {
         return new AudioChannel();
@@ -402,17 +467,26 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
     service.playChannels = function (channels) {
         // Stop all players first
         service.stop();
-        const context = new AudioContext;
-        service.currentContext = context;
-        channels.forEach(channel => {
-            if (channel.mute) {
-                return;
-            }
-
-            const channelInstance = AudioChannel.parseJSON(channel).configure(context);
-            if (channelInstance.timerWorker) {
-                timerWorkers.push(channelInstance.timerWorker);
-            }
+        const channelInstances = [];
+        promiseArray = channels.map(channel => {
+            const parsedChannel = AudioChannel.parseJSON(channel);
+            channelInstances.push(parsedChannel);
+            return _prepareExternalFactors(parsedChannel);
+        });
+        Promise.all(promiseArray).then(() => {
+            const context = new AudioContext;
+            service.currentContext = context;
+            channelInstances.forEach(channel => {
+                if (channel.mute) {
+                    return;
+                }
+                const channelInstance = channel.configure(context);
+                if (channelInstance.timerWorker) {
+                    timerWorkers.push(channelInstance.timerWorker);
+                }
+            });
+        }).catch(err => {
+            alert('Error while processing channels');
         });
     };
 
@@ -438,6 +512,11 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
         });
         timerWorkers = [];
     };
+
+    function _prepareExternalFactors(channel) {
+        const context = new AudioContext;
+        return channel.preConfigure(context);
+    }
 
     return service;
 });

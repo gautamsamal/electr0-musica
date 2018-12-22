@@ -24,6 +24,23 @@ angular.module('mainApp').factory('SynthJSONFactory', ($rootScope) => {
                 },
                 "delay": 0,
                 "wave": "sine"
+            },
+            'external': {
+                "gain": {
+                    "amp": 1,
+                    "a": 0.1,
+                    "d": 0,
+                    "s": 1,
+                    "r": 0,
+                    "egMode": 1
+                },
+                "delay": 0,
+                "type": "external",
+                "loop": false,
+                "startAfter": 0,
+                "duration": 60,
+                "playbackrate": 1,
+                "url": "http://staticcrate.com/content/audio-pro/soundscrate-happy-marimba.mp3"
             }
         },
         full: {
