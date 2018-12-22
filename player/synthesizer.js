@@ -1,11 +1,14 @@
 class AudioBeat {
-    constructor(context, delay = 0, duration) {
+    constructor(context, delay = 0, duration, startAfter = 0) {
         if (!context || !context instanceof AudioContext) {
             throw new Error('Invalid audio context');
         }
         this.context = context;
-        this.delay = parseFloat(delay);
+        this.offSet = isNaN(delay) ? 0 : parseFloat(delay);
+        this.startAfter = isNaN(startAfter) ? 0 : parseFloat(startAfter);
         this.duration = duration ? parseFloat(parseFloat(duration).toFixed(2)) : null;
+
+        this.offSet = this.offSet + this.startAfter;
     }
 }
 
@@ -33,7 +36,7 @@ class GainADSR {
         return parseFloat((this.a + this.d + this.r).toFixed(2));
     }
 
-    setup(context, source, delay = 0, duration) {
+    setup(context, source, offSet = 0, duration) {
         this.context = context;
         this.gain = this.context.createGain();
         if (source) {
@@ -44,17 +47,17 @@ class GainADSR {
         this.gain.gain.value = 0;
         if (!this.a || this.a === 0) {
             this.a = 0;
-            this.gain.gain.setValueAtTime(this.amp, delay);
+            this.gain.gain.setValueAtTime(this.amp, offSet);
         } else {
-            this.gain.gain.exponentialRampToValueAtTime(this.amp, delay + this.a);
+            this.gain.gain.exponentialRampToValueAtTime(this.amp, offSet + this.a);
         }
         // Sustain
-        this.gain.gain.exponentialRampToValueAtTime(this.s, delay + this.a + this.d);
+        this.gain.gain.exponentialRampToValueAtTime(this.s, offSet + this.a + this.d);
         // Decay
         if (this.r && this.r > 0) {
-            this.gain.gain.exponentialRampToValueAtTime(0.001, delay + this.a + this.d + this.r);
+            this.gain.gain.exponentialRampToValueAtTime(0.001, offSet + this.a + this.d + this.r);
         } else if (duration && duration > 0) {
-            this.gain.gain.exponentialRampToValueAtTime(0.001, delay + this.a + this.d + duration);
+            this.gain.gain.exponentialRampToValueAtTime(0.001, offSet + this.a + this.d + duration);
         }
 
     }
@@ -80,11 +83,11 @@ class FrequencyStream {
         return instance;
     }
 
-    setup(osc, delay = 0) {
+    setup(osc, offSet = 0) {
         this.osc = osc;
         const zeroTimeFreq = this.frequencies.find(f => f.time === 0);
         // Initial frequency
-        osc.frequency.setValueAtTime((zeroTimeFreq.frequency || 0), delay);
+        osc.frequency.setValueAtTime((zeroTimeFreq.frequency || 0), offSet);
         this.frequencies.forEach(f => {
             if (f.time === null || f.time === undefined) {
                 return;
@@ -96,7 +99,7 @@ class FrequencyStream {
                 return;
             }
             const freq = f.frequency || 0.001; // Zero is not accepted for exponential decay/increase
-            osc.frequency.exponentialRampToValueAtTime(freq, delay + f.time);
+            osc.frequency.exponentialRampToValueAtTime(freq, offSet + f.time);
         });
     }
 
@@ -120,8 +123,8 @@ class FrequencyStream {
 }
 
 class Oscillator extends AudioBeat {
-    constructor(context, type = 'sine', delay = 0, duration) {
-        super(context, delay, duration);
+    constructor(context, type = 'sine', delay = 0, duration, startAfter = 0) {
+        super(context, delay, duration, startAfter);
         this.type = type;
         this.osc = this.context.createOscillator();
     }
@@ -132,7 +135,7 @@ class Oscillator extends AudioBeat {
 
     setupGain(gainADSR) {
         this.gainADSR = gainADSR;
-        this.gainADSR.setup(this.context, this.osc, this.delay, this.duration);
+        this.gainADSR.setup(this.context, this.osc, this.offSet, this.duration);
         if (!this.duration) {
             this.duration = this.gainADSR.gainDuration;
         }
@@ -141,21 +144,22 @@ class Oscillator extends AudioBeat {
 
     setupFrequency(frequencyStream) {
         this.frequencyStream = frequencyStream;
-        this.frequencyStream.setup(this.osc, this.delay);
+        this.frequencyStream.setup(this.osc, this.offSet);
     }
 
     play(gainADSR, frequencyStream) {
         this.setupGain(gainADSR);
         this.setupFrequency(frequencyStream);
-        this.osc.start(this.delay);
-        this.osc.stop(this.delay + this.duration);
-        console.log('OSC would stop at', this.delay + this.duration);
+        this.osc.start(this.offSet);
+        this.osc.stop(this.offSet + this.duration);
+        console.log('OSC would satrt at', this.offSet);
+        console.log('OSC would stop at', this.offSet + this.duration);
     }
 }
 
 class BufferPlayer extends AudioBeat {
-    constructor(context, type, delay = 0, duration, loop, playbackrate = 1) {
-        super(context, delay, duration);
+    constructor(context, type, delay = 0, duration, startAfter = 0, loop, playbackrate = 1) {
+        super(context, delay, duration, startAfter);
         this.loop = loop;
         this.type = type;
         this.audioBuffer = this.context.createBufferSource();
@@ -196,7 +200,7 @@ class BufferPlayer extends AudioBeat {
 
     setupGain(gainADSR) {
         this.gainADSR = gainADSR;
-        this.gainADSR.setup(this.context, this.audioBuffer, this.delay);
+        this.gainADSR.setup(this.context, this.audioBuffer, this.offSet);
         if (!this.duration) {
             this.duration = this.gainADSR.gainDuration;
         }
@@ -209,10 +213,159 @@ class BufferPlayer extends AudioBeat {
         }
         this.audioBuffer.buffer = this.createBufferSource();
         this.setupGain(gainADSR);
-        this.audioBuffer.start(this.delay);
-        this.audioBuffer.stop(this.delay + this.duration);
-        console.log('BUFF would stop at', this.delay + this.duration);
+        this.audioBuffer.start(this.offSet);
+        this.audioBuffer.stop(this.offSet + this.duration);
+        console.log('BUFF would satrt at', this.offSet);
+        console.log('BUFF would stop at', this.offSet + this.duration);
     }
+}
+
+class AudioChannel {
+    constructor() {
+        this.gain = new GainADSR();
+        this.frequency = new FrequencyStream();
+        this.delay = 0;
+        this.wave = 'sine';
+        this.type = 'osc';
+        this.loop = false;
+        this.startAfter = 0;
+        this.duration = 0;
+        this.timerWorker;
+    }
+
+    static parseJSON(json) {
+        const instance = new AudioChannel();
+        Object.assign(instance, json);
+        instance.gain = instance.gain ? GainADSR.parseJSON(instance.gain) : new GainADSR();
+        instance.frequency = instance.frequency ? FrequencyStream.parseJSON(instance.frequency) : new FrequencyStream();
+        return instance;
+    }
+
+    /**
+     * Configure and play the channel
+     * @param {AudioContext} context
+     */
+    configure(context) {
+        const scheduleAheadTime = 0.05;
+        this.originalDelay = this.delay;
+
+        this._setUpInitialRepeatTime();
+
+        let playback = function () { };
+        if (this.type === 'osc') {
+            playback = this._playOscChannel;
+        }
+
+        if (this.type === 'noise') {
+            playback = this._playNoiseChannel;
+        }
+
+        playback.call(this, context);
+        if (this.loop) {
+            this._scheduleAndLoop(context, scheduleAheadTime, playback);
+        }
+        return this;
+    }
+
+    _setUpScheduler(schedule) {
+        const timerWorker = new Worker("player/worker.js");
+        timerWorker.onmessage = function (e) {
+            if (e.data == "tick") {
+                // console.log("tick!");
+                schedule();
+            }
+            else
+                console.log("message: " + e.data);
+        };
+        timerWorker.postMessage({ "interval": 25 }); //25 milliseconds
+        this.timerWorker = timerWorker;
+    }
+
+    /**
+     * Initial repeat time for a channel.
+     */
+    _setUpInitialRepeatTime() {
+        this.duration = this.duration || this.gain.gainDuration;
+        this.totalDuration = (this.originalDelay || 0) + (this.duration);
+        // For first time, we will wait extra startAfter
+        this.nextPlayTime = parseFloat(this.totalDuration) + (this.startAfter || 0);
+    }
+
+    /**
+     * Add a scheduler via web worker and check if we have a note in future to play.
+     * @param {AudioContext} context Audio context
+     * @param {number} scheduleAheadTime Time in sec to look ahead for next tone.
+     * @param {function} playback Callback to play the note
+     */
+    _scheduleAndLoop(context, scheduleAheadTime, playback) {
+        this._setUpScheduler(() => {
+            if (this.nextPlayTime <= context.currentTime + scheduleAheadTime && this._checkRepeatCountOrSec(context.currentTime)) {
+                this.startAfter = 0;
+                this.delay = this.nextPlayTime + this.originalDelay;
+                playback.call(this, context);
+                this.nextPlayTime = parseFloat(this.nextPlayTime + this.totalDuration);
+            }
+        });
+        this.timerWorker.postMessage("start");
+    }
+
+    /**
+     * Check if we have repitation limit set and do we need to loop.
+     * In case of secs starts time is excluded.
+     * @param {number} currentTime Current audio time
+     */
+    _checkRepeatCountOrSec(currentTime) {
+        if (this.limitRepeatCount && this.limitRepeatCount > 0 && this.loopCount >= this.limitRepeatCount) {
+            return false;
+        }
+        if (this.limitRepeatSec && this.limitRepeatSec > 0 && (currentTime - this.startAfter || 0) > this.limitRepeatSec) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Play Oscillator channel.
+     * @param {AudioContext} context Audio Context
+     */
+    _playOscChannel(context) {
+        // For loop count
+        if (!this.loopCount) {
+            this.loopCount = 0;
+        }
+        this.loopCount++;
+
+        // Oscillator
+        console.log('OSC config', this);
+        const osc = new Oscillator(context, this.wave, this.delay, this.duration, this.startAfter);
+        const oscillator = osc.getOsc();
+        oscillator.onended = function () {
+            // console.log('OSC Ended', context.currentTime);
+        };
+        osc.play(this.gain, this.frequency);
+    };
+
+    /**
+     * Plays buffer based noise
+     * @param {AudioContext} context Audio Context
+     */
+    _playNoiseChannel(context) {
+        // For loop count
+        if (!this.loopCount) {
+            this.loopCount = 0;
+        }
+        this.loopCount++;
+        // Noise
+        console.log('BUFF config', this);
+        const noise = new BufferPlayer(context, this.type, this.delay, this.duration, this.startAfter, this.loop);
+        const bufferNode = noise.getBufferSourceNode();
+        bufferNode.onended = function () {
+            // console.log('Buffer Ended', context.currentTime);
+        };
+
+        // Will create a new buffer if not provided.
+        noise.playNoise(this.gain);
+    };
 }
 
 /**
@@ -223,66 +376,42 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
         currentContext: null
     };
 
-    const scheduleAheadTime = 0.05;
     let timerWorkers = [];
 
     service.getChannel = function () {
-        return {
-            gain: new GainADSR(),
-            frequency: new FrequencyStream(),
-            delay: 0,
-            wave: 'sine',
-            type: 'osc',
-            loop: false
-        }
+        return new AudioChannel();
     };
 
     service.parsePredefinedChannel = function (note) {
-        if (!SynthJSONFactory[note]) {
+        if (!SynthJSONFactory.notes[note]) {
             alert('Specified note not found');
             return;
         }
 
-        const channel = angular.copy(SynthJSONFactory[note]);
-        channel.gain = channel.gain ? GainADSR.parseJSON(channel.gain) : new GainADSR();
-        channel.frequency = channel.frequency ? FrequencyStream.parseJSON(channel.frequency) : new FrequencyStream();
-        return channel;
+        return AudioChannel.parseJSON(SynthJSONFactory.notes[note]);
     };
 
     service.getSampleTracks = function () {
         const origChannels = SynthJSONFactory.full.sample;
 
         return origChannels.map(c => {
-            const channel = angular.copy(c);
-            channel.gain = channel.gain ? GainADSR.parseJSON(channel.gain) : new GainADSR();
-            channel.frequency = channel.frequency ? FrequencyStream.parseJSON(channel.frequency) : new FrequencyStream();
-            return channel;
+            return AudioChannel.parseJSON(c);
         });
     };
 
     service.playChannels = function (channels) {
+        // Stop all players first
+        service.stop();
         const context = new AudioContext;
         service.currentContext = context;
         channels.forEach(channel => {
             if (channel.mute) {
                 return;
             }
-            const copyChannel = angular.copy(channel);
-            copyChannel.originalDelay = channel.delay;
-            _setUpInitialRepeatTime(copyChannel);
 
-            let playback = function () { };
-            if (channel.type === 'osc') {
-                playback = _playOscChannel;
-            }
-
-            if (channel.type === 'noise') {
-                playback = _playNoiseChannel;
-            }
-
-            playback(context, copyChannel);
-            if (channel.loop) {
-                _scheduleAndLoop(context, copyChannel, playback);
+            const channelInstance = AudioChannel.parseJSON(channel).configure(context);
+            if (channelInstance.timerWorker) {
+                timerWorkers.push(channelInstance.timerWorker);
             }
         });
     };
@@ -308,73 +437,6 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
             w.postMessage('stop');
         });
         timerWorkers = [];
-    };
-
-    function _setUpScheduler(channel, schedule) {
-        const timerWorker = new Worker("player/worker.js");
-        timerWorker.onmessage = function (e) {
-            if (e.data == "tick") {
-                // console.log("tick!");
-                schedule();
-            }
-            else
-                console.log("message: " + e.data);
-        };
-        timerWorker.postMessage({ "interval": 25 }); //25 milliseconds
-        channel.timerWorker = timerWorker;
-        timerWorkers.push(timerWorker);
-    }
-
-    function _setUpInitialRepeatTime(channel) {
-        channel.duration = channel.duration || channel.gain.gainDuration;
-        channel.totalDuration = (channel.originalDelay || 0) + (channel.duration);
-        channel.nextPlayTime = parseFloat(channel.totalDuration);
-    }
-
-    function _scheduleAndLoop(context, channel, playback) {
-        _setUpScheduler(channel, function () {
-            if (channel.nextPlayTime <= context.currentTime + scheduleAheadTime) {
-                channel.delay = channel.nextPlayTime + channel.originalDelay;
-                playback(context, channel);
-                channel.nextPlayTime = parseFloat(channel.nextPlayTime + channel.totalDuration);
-            }
-        });
-        channel.timerWorker.postMessage("start");
-    }
-
-    function _playOscChannel(context, channel) {
-        // For loop count
-        if (!channel.loopCount) {
-            channel.loopCount = 0;
-        }
-        channel.loopCount++;
-
-        // Oscillator
-        console.log('OSC config', channel);
-        const osc = new Oscillator(context, channel.wave, channel.delay, channel.duration);
-        const oscillator = osc.getOsc();
-        oscillator.onended = function () {
-            // console.log('OSC Ended', context.currentTime);
-        };
-        osc.play(channel.gain, channel.frequency);
-    };
-
-    function _playNoiseChannel(context, channel) {
-        // For loop count
-        if (!channel.loopCount) {
-            channel.loopCount = 0;
-        }
-        channel.loopCount++;
-        // Noise
-        console.log('BUFF config', channel);
-        const noise = new BufferPlayer(context, channel.type, channel.delay, channel.duration, channel.loop);
-        const bufferNode = noise.getBufferSourceNode();
-        bufferNode.onended = function () {
-            // console.log('Buffer Ended', context.currentTime);
-        };
-
-        // Will create a new buffer if not provided.
-        noise.playNoise(channel.gain);
     };
 
     return service;

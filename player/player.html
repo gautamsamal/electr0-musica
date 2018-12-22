@@ -117,13 +117,24 @@
             </div>
             <div class="row">
                 <div class="col-2 text-right">
+                    <label>Starts After</label>
+                </div>
+                <div style="margin-left: 15px;">
+                    <input class="time-input" type="number" min="0" ng-model="channel.startAfter" />
+                </div>
+                <div class="col-6" style="font-size: 12px;">
+                    <span>Will be applicable to start of the bit, will not be included in loop or afterwards</span>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-2 text-right">
                     <label>Duration</label>
                 </div>
                 <div style="margin-left: 15px;">
                     <input class="time-input" type="number" min="0" ng-model="channel.duration" />
                 </div>
                 <div class="col-6" style="font-size: 12px;">
-                    <span>Should be grater than ADSR total time. Useful if we want buffer time after ADSR cycle.</span>
+                    <span>Should be greater than ADSR total time. Useful if we want buffer time after ADSR cycle.</span>
                 </div>
             </div>
             <div class="row">
@@ -132,6 +143,16 @@
                 </div>
                 <div class="col-2">
                     <input type="checkbox" ng-model="channel.loop" />
+                </div>
+            </div>
+            <div class="row" ng-if="channel.loop">
+                <div class="col-2 text-right">
+                    <label>Repeat Till</label>
+                </div>
+                <div class="col-5">
+                    <input class="time-input" type="number" min="0" ng-model="channel.limitRepeatSec" /> sec(s)
+                    &nbsp;or after&nbsp;
+                    <input class="time-input" type="number" min="0" ng-model="channel.limitRepeatCount" /> times
                 </div>
             </div>
             <div class="row">
@@ -148,6 +169,14 @@
                 </div>
                 <div class="col-5">
                     <label>Total Time: <b>{{channel.gain.gainDuration}}</b></label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-3">
+                    <label>Peak Amplitude (gain) <span>{{channel.gain.amp}}</span></label>
+                </div>
+                <div class="col-5">
+                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.amp" />
                 </div>
             </div>
             <div class="row">

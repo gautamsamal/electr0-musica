@@ -4,10 +4,10 @@ angular.module('mainApp').factory('SynthJSONFactory', ($rootScope) => {
             'kick': {
                 "type": "osc",
                 "gain": {
-                    "a": 0.01,
+                    "a": 0,
                     "d": 0.5,
                     "s": 1,
-                    "r": 0,
+                    "r": 0.01,
                     "egMode": 1
                 },
                 "frequency": {
