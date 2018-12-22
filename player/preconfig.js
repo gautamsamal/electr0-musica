@@ -39,6 +39,7 @@ angular.module('mainApp').factory('SynthJSONFactory', ($rootScope) => {
                     "delay": 0,
                     "type": "noise",
                     "mute": false,
+                    "duration": 0.6,
                     "loop": true
                 },
                 {
@@ -61,7 +62,7 @@ angular.module('mainApp').factory('SynthJSONFactory', ($rootScope) => {
                     "delay": 0,
                     "wave": "triangle",
                     "mute": false,
-                    "duration": null,
+                    "duration": 0.6,
                     "loop": true
                 },
                 {
@@ -83,7 +84,7 @@ angular.module('mainApp').factory('SynthJSONFactory', ($rootScope) => {
                     },
                     "delay": 0,
                     "wave": "sine",
-                    "duration": null,
+                    "duration": 0.6,
                     "loop": true
                 }
             ]
