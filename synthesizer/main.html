@@ -2,17 +2,6 @@
     #Synthesizer{
         margin-bottom: 30px;
     }
-    .channel-panel {
-        padding: 15px;
-        background: #dbdbdb1c;
-        border: 1px solid #dbdbdb;
-        width: 95%;
-        margin: auto;
-        margin-bottom: 10px;
-    }
-    .time-input{
-        width: 80px;
-    }
     input[type=range]{
         width: 100%;
     }
@@ -23,7 +12,7 @@
      padding: 15px;
      background: #dbdbdb1c;
      border: 1px solid #dbdbdb;
-     width: 95%;
+     width: 100%;
      margin: auto;
      margin-bottom: 10px;
 }
@@ -279,5 +268,19 @@
     <div class="text-center">
         <button class="btn btn-info" ng-click="loadSample()">Too hard? Load a sample</button>
 
+    </div>
+    <hr />
+    <h4>Make it a track?</h4>
+    <label>From <input class="time-input" type="number" min="0" ng-model="recording.start" /> sec</label>
+    to
+    <label><input class="time-input" type="number" min="0" ng-model="recording.end" /> sec</label>
+    <div>
+        <button class="btn btn-primary" ng-click="record()">Play & Extract to track</button>
+        &nbsp; Current Time {{SynthFactory.currentContext.currentTime | number: 1}}
+    </div>
+    <div>
+        <br />
+        <h6>Extracted Audio</h6>
+        <audio controls=""></audio>
     </div>
 </div>

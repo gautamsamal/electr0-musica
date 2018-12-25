@@ -18,7 +18,17 @@
     </div>
     <hr />
     <div>
-        <button class="btn btn-primary" ng-click="addTrack()">Add Track</button>
+        <h4>Add a new Track</h4>
+        <button class="btn btn-sm btn-primary" ng-click="openSynthesizer()">Add Track</button>
+    </div>
+    <div class="track-loader" ng-if="controlFlags.trackLoader">
+        <div style="position: relative;">
+            <div style="position: absolute; top:0px;z-index: 1;">
+                <a style="font-weight: 600;cursor: pointer;" class="text-primary" ng-click="closeSynthesizer()">&lt; Go
+                    back to Projects</a>
+            </div>
+            <div ng-include="'synthesizer/main.html'"></div>
+        </div>
     </div>
     <div>
         JSON configuration

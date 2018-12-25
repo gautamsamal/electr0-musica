@@ -1,3 +1,7 @@
+body{
+    padding: 0px 10px 0px 10px;
+}
+
 #editor .tracks{
     width: 100px;
     float: left;
@@ -44,4 +48,14 @@
     min-height: 100%;
     line-height:2;
     cursor: pointer;
+}
+
+
+.track-loader{
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    background: #fff;
+    width: 100%;
+    padding: 0px 10px;
 }

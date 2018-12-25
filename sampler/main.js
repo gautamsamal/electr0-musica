@@ -1,29 +1,24 @@
 angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, MainLinePlayer) => {
 
-    const trackSource = ['basic', 'music'];
+    const trackSource = ['synth', 'external'];
     const secLength = 80;
     const minimizedSecLength = secLength / 8;
     let trackIds = 0;
 
     $scope.controlFlags = {
-        ready: false
+        ready: false,
+        trackLoader: false
     };
 
-    $scope.configuration = {
-        tracks: [{
-            id: 'track' + (trackIds++),
-            source: trackSource[0],
-            name: 'track' + (trackIds),
-            segments: [{
-                url: 'https://d1490khl9dq1ow.cloudfront.net/sfx/mp3preview/jdl-081816-SFX-SL_DGB_Bass_Delightful_110_D.mp3'
-            }]
-        },
-        {
-            id: 'track' + (trackIds++),
-            source: trackSource[0],
-            name: 'track' + (trackIds),
-            segments: []
-        }]
+    $scope.configuration = $scope.currentProject.configuration;
+
+    $scope.openSynthesizer = function () {
+        $scope.controlFlags.trackLoader = true;
+        $("html, body").animate({ scrollTop: 0 }, 500);
+    };
+
+    $scope.closeSynthesizer = function () {
+        $scope.controlFlags.trackLoader = false;
     };
 
     // Player ready
@@ -31,19 +26,15 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, MainLi
     function _checkIfSegmentsReady() {
         let ready = true;
         $scope.configuration.tracks.forEach(track => {
-            track.segments.forEach(seg => {
-                if (!seg.__playerReady && !seg.__playerError) {
-                    ready = false;
-                    return;
-                }
-            });
-            if (!ready) {
+            if (!track.__ready && !track.__error) {
+                ready = false;
                 return;
             }
         });
         return ready;
     }
-    $scope.$on('Player:ready', function () {
+
+    $scope.$on('Track:ready', function () {
         $scope.controlFlags.ready = _checkIfSegmentsReady();
         $scope.$digest();
     });
@@ -82,7 +73,6 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, MainLi
         $(`#track-path-${track.id}`).html('');
         const segments = track.segments;
         segments.forEach((seg, index) => {
-            MainLinePlayer.loadPlayback(seg);
             return;
             // DODO : height of tracker on change of height.
             const elem = $(`<span class="tracker" segment-index="${index}"

@@ -1,9 +1,46 @@
+class Utils {
+    constructor() {
+
+    }
+
+    static setUpScheduler(schedule, interval) {
+        const timerWorker = new Worker("utils/worker.js");
+        timerWorker.onmessage = function (e) {
+            if (e.data == "tick") {
+                // console.log("tick!");
+                schedule();
+            }
+            else
+                console.log("message: " + e.data);
+        };
+        timerWorker.postMessage({ "interval": interval || 25 }); //25 milliseconds
+        return timerWorker;
+    }
+
+    static convertBlobToAudioBuffer(context, blob, callback = () => { }) {
+        let arrayBuffer;
+        let fileReader = new FileReader();
+        fileReader.onload = function (event) {
+            arrayBuffer = event.target.result;
+            context.decodeAudioData(arrayBuffer, function (buffer) {
+                console.log('Buffer---', buffer)
+                callback(null, buffer);
+            }, function (e) {
+                console.log("Error with decoding audio data" + e.err);
+                callback(e);
+            });
+        };
+        fileReader.readAsArrayBuffer(blob);
+    }
+}
+
 class AudioBeat {
-    constructor(context, delay = 0, duration, startAfter = 0) {
+    constructor(context, destination, delay = 0, duration, startAfter = 0) {
         if (!context || !context instanceof AudioContext) {
             throw new Error('Invalid audio context');
         }
         this.context = context;
+        this.destination = destination || this.context.destination;
         this.offSet = isNaN(delay) ? 0 : parseFloat(delay);
         this.startAfter = isNaN(startAfter) ? 0 : parseFloat(startAfter);
         this.duration = duration ? parseFloat(parseFloat(duration).toFixed(2)) : null;
@@ -64,8 +101,8 @@ class GainADSR {
 
     }
 
-    connectOutput() {
-        this.gain.connect(this.context.destination);
+    connectOutput(destination) {
+        this.gain.connect(destination || this.context.destination);
     }
 }
 
@@ -125,8 +162,8 @@ class FrequencyStream {
 }
 
 class Oscillator extends AudioBeat {
-    constructor(context, type = 'sine', delay = 0, duration, startAfter = 0) {
-        super(context, delay, duration, startAfter);
+    constructor(context, destination, type = 'sine', delay = 0, duration, startAfter = 0) {
+        super(context, destination, delay, duration, startAfter);
         this.type = type;
         this.osc = this.context.createOscillator();
     }
@@ -141,7 +178,7 @@ class Oscillator extends AudioBeat {
         if (!this.duration) {
             this.duration = this.gainADSR.gainDuration;
         }
-        this.gainADSR.connectOutput();
+        this.gainADSR.connectOutput(this.destination);
     }
 
     setupFrequency(frequencyStream) {
@@ -160,8 +197,8 @@ class Oscillator extends AudioBeat {
 }
 
 class BufferPlayer extends AudioBeat {
-    constructor(context, type, delay = 0, duration, startAfter = 0, loop, playbackrate = 1) {
-        super(context, delay, duration, startAfter);
+    constructor(context, destination, type, delay = 0, duration, startAfter = 0, loop, playbackrate = 1) {
+        super(context, destination, delay, duration, startAfter);
         this.loop = loop;
         this.type = type;
         this.audioBuffer = this.context.createBufferSource();
@@ -220,7 +257,7 @@ class BufferPlayer extends AudioBeat {
     setupGain(gainADSR) {
         this.gainADSR = gainADSR;
         this.gainADSR.setup(this.context, this.audioBuffer, this.offSet, this.duration);
-        this.gainADSR.connectOutput();
+        this.gainADSR.connectOutput(this.destination);
     }
 
     playNoise(gainADSR) {
@@ -287,9 +324,10 @@ class AudioChannel {
      * Configure and play the channel
      * @param {AudioContext} context
      */
-    configure(context) {
+    configure(context, destination) {
         const scheduleAheadTime = 0.05;
         this.originalDelay = this.delay;
+        this.destination = destination;
 
         this._setUpInitialRepeatTime();
 
@@ -313,20 +351,6 @@ class AudioChannel {
         return this;
     }
 
-    _setUpScheduler(schedule) {
-        const timerWorker = new Worker("utils/worker.js");
-        timerWorker.onmessage = function (e) {
-            if (e.data == "tick") {
-                // console.log("tick!");
-                schedule();
-            }
-            else
-                console.log("message: " + e.data);
-        };
-        timerWorker.postMessage({ "interval": 25 }); //25 milliseconds
-        this.timerWorker = timerWorker;
-    }
-
     /**
      * Initial repeat time for a channel.
      */
@@ -344,7 +368,7 @@ class AudioChannel {
      * @param {function} playback Callback to play the note
      */
     _scheduleAndLoop(context, scheduleAheadTime, playback) {
-        this._setUpScheduler(() => {
+        this.timerWorker = Utils.setUpScheduler(() => {
             if (this.nextPlayTime <= context.currentTime + scheduleAheadTime && this._checkRepeatCountOrSec(context.currentTime)) {
                 this.startAfter = 0;
                 this.delay = this.nextPlayTime + this.originalDelay;
@@ -383,7 +407,7 @@ class AudioChannel {
 
         // Oscillator
         console.log('OSC config', this);
-        const osc = new Oscillator(context, this.wave, this.delay, this.duration, this.startAfter);
+        const osc = new Oscillator(context, this.destination, this.wave, this.delay, this.duration, this.startAfter);
         const oscillator = osc.getOsc();
         oscillator.onended = function () {
             // console.log('OSC Ended', context.currentTime);
@@ -403,7 +427,7 @@ class AudioChannel {
         this.loopCount++;
         // Noise
         console.log('BUFF config', this);
-        const noise = new BufferPlayer(context, this.type, this.delay, this.duration, this.startAfter, this.loop);
+        const noise = new BufferPlayer(context, this.destination, this.type, this.delay, this.duration, this.startAfter, this.loop);
         const bufferNode = noise.getBufferSourceNode();
         bufferNode.onended = function () {
             // console.log('Buffer Ended', context.currentTime);
@@ -421,7 +445,7 @@ class AudioChannel {
         this.loopCount++;
         // Noise
         console.log('EXTERNAL config', this);
-        const buffPlayer = new BufferPlayer(context, this.type, this.delay, this.duration, this.startAfter, this.loop);
+        const buffPlayer = new BufferPlayer(context, this.destination, this.type, this.delay, this.duration, this.startAfter, this.loop);
         const bufferNode = buffPlayer.getBufferSourceNode();
         bufferNode.onended = function () {
             console.log('Buffer Player Ended', context.currentTime);
@@ -464,7 +488,7 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
         });
     };
 
-    service.playChannels = function (channels) {
+    service.playChannels = function (channels, recordTime) {
         // Stop all players first
         service.stop();
         const channelInstances = [];
@@ -476,11 +500,13 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
         Promise.all(promiseArray).then(() => {
             const context = new AudioContext;
             service.currentContext = context;
+            const destination = _setUpRecorder(context, recordTime);
+
             channelInstances.forEach(channel => {
                 if (channel.mute) {
                     return;
                 }
-                const channelInstance = channel.configure(context);
+                const channelInstance = channel.configure(context, destination);
                 if (channelInstance.timerWorker) {
                     timerWorkers.push(channelInstance.timerWorker);
                 }
@@ -512,6 +538,51 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
         });
         timerWorkers = [];
     };
+
+    function _setUpRecorder(context, recordTime) {
+        let destination;
+        const chunks = [];
+        if (recordTime && recordTime.start !== undefined && recordTime.start !== null
+            && recordTime.end !== undefined && recordTime.end !== null) {
+            destination = context.createMediaStreamDestination();
+            const mediaRecorder = new MediaRecorder(destination.stream);
+            let recordStarted = false;
+            let recordStopped = false;
+
+            const timeWorker = Utils.setUpScheduler(() => {
+                $rootScope.$broadcast('Record:Timer:Update');
+                if (recordTime.start <= context.currentTime + 0.01 && !recordStarted) {
+                    console.log('Recorder started', context.currentTime);
+                    mediaRecorder.start();
+                    recordStarted = true;
+                }
+                if (recordTime.end <= context.currentTime && !recordStopped) {
+                    console.log('Recorder stopped', context.currentTime);
+                    mediaRecorder.stop();
+                    recordStopped = true;
+                    // Stop player
+                    service.stop();
+                }
+            });
+            timeWorker.postMessage("start");
+            timerWorkers.push(timeWorker);
+
+            //Events
+            mediaRecorder.ondataavailable = function (evt) {
+                console.log('getting data', evt.data);
+                // push each chunk (blobs) in an array
+                chunks.push(evt.data);
+            };
+
+            mediaRecorder.onstop = function (evt) {
+                // Make blob out of our blobs, and open it.
+                var blob = new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' });
+                document.querySelector("audio").src = URL.createObjectURL(blob);
+                Utils.convertBlobToAudioBuffer(context, blob);
+            };
+        }
+        return destination;
+    }
 
     function _prepareExternalFactors(channel) {
         const context = new AudioContext;

@@ -1,6 +1,11 @@
 angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, SynthFactory) => {
 
     $scope.channels = [];
+    $scope.recording = {
+        start: 0,
+        end: 1
+    };
+    $scope.SynthFactory = SynthFactory;
 
     $scope.loadSample = function () {
         $scope.channels = SynthFactory.getSampleTracks();
@@ -39,6 +44,19 @@ angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, SynthFac
     $scope.resume = function () {
         SynthFactory.resume();
     };
+
+    $scope.record = function () {
+        SynthFactory.playChannels($scope.channels, $scope.recording);
+    };
+
+    $scope.$on('$destroy', () => {
+        SynthFactory.stop();
+    });
+
+    // Update on record time
+    $scope.$on('Record:Timer:Update', () => {
+        $scope.$digest();
+    });
 
     $scope.newChannel();
 });

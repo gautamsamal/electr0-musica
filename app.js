@@ -13,7 +13,14 @@ mainApp.run(($rootScope) => {
 mainApp.controller('MainCtrl', ($rootScope, $scope) => {
     // $scope.appMode = 'Sounds';
     // $scope.appMode = 'Editor';
-    // $scope.appMode = 'MainLine';
-    $scope.appMode = 'Synth';
+    $scope.appMode = 'MainLine';
+    // $scope.appMode = 'Synth';
+
+    $scope.currentProject = {
+        Title: 'My Project',
+        configuration: {
+            tracks: []
+        }
+    };
 });
 
