@@ -314,7 +314,7 @@ class AudioChannel {
     }
 
     _setUpScheduler(schedule) {
-        const timerWorker = new Worker("player/worker.js");
+        const timerWorker = new Worker("utils/worker.js");
         timerWorker.onmessage = function (e) {
             if (e.data == "tick") {
                 // console.log("tick!");
