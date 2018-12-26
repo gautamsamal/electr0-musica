@@ -1,8 +1,14 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const bodyParser = require('body-parser');
 const app = express();
 const port = 8000;
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
 
 app.use((req, res, next) => {
     if (req.url.indexOf('/api') === -1) {

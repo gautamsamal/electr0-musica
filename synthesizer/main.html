@@ -60,13 +60,14 @@
             Channel</button>
         OR
         <select class="" ng-model="channelSelector">
+            <option value="">Pre defined channel</option>
             <option>kick</option>
             <option>external</option>
         </select>
         <button class="btn btn-sm btn-primary " ng-click="loadChannel(channelSelector);channelSelector = null;" style="margin-left:10px;">Load
             Channel</button>
     </div>
-    <div class="channel-panel" ng-repeat="channel in channels">
+    <div class="channel-panel" ng-repeat="channel in currentProject.channels">
         <div>
             <b>#{{$index + 1}}</b>
             <span ng-click="deleteChannel($index)" class="float-right text-danger" style="cursor: pointer;">Remove
@@ -258,7 +259,7 @@
         </div>
         {{channel}}
     </div>
-    <div class="text-center" ng-if="channels.length > 0">
+    <div class="text-center" ng-if="currentProject.channels.length > 0">
         <button class="btn btn-success" ng-click="play()">Play</button>
         <button class="btn btn-success" ng-click="pause()">Pause</button>
         <button class="btn btn-success" ng-click="resume()">Resume</button>
@@ -270,12 +271,37 @@
 
     </div>
     <hr />
+    <div class="row" style="margin: 0px;">
+        <div class="col-6" style="border-right: 1px #e3dddd solid;padding-left: 0px;">
+            <h4>Save your efforts?</h4>
+            <label>Name it: <input type="text" ng-model="currentProject.name" /></label>
+            &nbsp;
+            <button class="btn btn-sm btn-primary" ng-click="updateProject()">Save or Update</button>
+            <div>
+                * If the Project name already exists, it will get updated!
+            </div>
+        </div>
+        <div class="col-6">
+            <h4>Load pre-saved configuration</h4>
+            <select class="" ng-model="selectedProjectName">
+                <option value="">Pre-saved configuration</option>
+                <option ng-repeat="proj in savedProjects">{{proj}}</option>
+            </select>
+            &nbsp;
+            <button class="btn btn-sm btn-primary" ng-click="loadConfiguration(selectedProjectName)">Load Configuration</button>
+            <div>
+                * Will replace the current configuration with the incoming!
+            </div>
+        </div>
+    </div>
+
+    <hr />
     <h4>Make it a track?</h4>
     <label>From <input class="time-input" type="number" min="0" ng-model="recording.start" /> sec</label>
     to
     <label><input class="time-input" type="number" min="0" ng-model="recording.end" /> sec</label>
     <div>
-        <button class="btn btn-primary" ng-click="record()">Play & Extract to track</button>
+        <button class="btn btn-sm btn-primary" ng-click="record()">Play & Extract to track</button>
         &nbsp; Current Time {{SynthFactory.currentContext.currentTime | number: 1}}
     </div>
     <div>
