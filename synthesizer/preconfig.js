@@ -41,6 +41,71 @@ angular.module('mainApp').factory('SynthJSONFactory', ($rootScope) => {
                 "duration": 60,
                 "playbackrate": 1,
                 "url": "http://staticcrate.com/content/audio-pro/soundscrate-happy-marimba.mp3"
+            },
+            'drum-kicks1': {
+                "gain": {
+                    "amp": 1,
+                    "a": 0.45,
+                    "d": 0.05,
+                    "s": 1,
+                    "r": 0.5,
+                    "egMode": 1
+                },
+                "frequency": {
+                    "frequencies": [
+                        {
+                            "time": 0,
+                            "frequency": 440
+                        }
+                    ]
+                },
+                "filter": {
+                    "enabled": true,
+                    "frequencyValue": 0.33,
+                    "qualityValue": 0.38
+                },
+                "delay": 0,
+                "wave": "sine",
+                "type": "noise",
+                "loop": true,
+                "disableADSR": false,
+                "startAfter": 0,
+                "duration": 0,
+                "playbackrate": 1,
+                "fileName": "music_zapsplat_electric_drum_and_bass.mp3",
+                "limitRepeatCount": 5
+            },
+            'drum-kicks2': {
+                "gain": {
+                    "amp": 1,
+                    "a": 0.45,
+                    "d": 0.05,
+                    "s": 1,
+                    "r": 0.5,
+                    "egMode": 1
+                },
+                "frequency": {
+                    "frequencies": [
+                        {
+                            "time": 0,
+                            "frequency": 440
+                        }
+                    ]
+                },
+                "filter": {
+                    "enabled": true,
+                    "frequencyValue": 0.52,
+                    "qualityValue": 0
+                },
+                "delay": 0,
+                "wave": "sine",
+                "type": "noise",
+                "loop": true,
+                "disableADSR": false,
+                "startAfter": 0.5,
+                "duration": 0,
+                "playbackrate": 1,
+                "limitRepeatCount": 5
             }
         },
         full: {
