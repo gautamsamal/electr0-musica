@@ -83,6 +83,7 @@
                         <option value="osc">Oscillator</option>
                         <option value="noise">Noise</option>
                         <option value="external">External</option>
+                        <option value="upload">Upload</option>
                     </select>
                 </div>
             </div>
@@ -105,6 +106,19 @@
                 </div>
                 <div class="col-5">
                     <input type="text" ng-model="channel.url" style="width: 100%" />
+                </div>
+                <div class="col-1">
+                    <a style="text-decoration: underline;cursor: pointer;" ng-click="exportAudioFromURL(channel)">Export</a>
+                </div>
+            </div>
+            <div class="row" ng-if="channel.type === 'upload'">
+                <div class="col-2 text-right">
+                    <label>Upload a File</label>
+                </div>
+                <div class="col-5">
+                    <div class="btn btn-primary btn-sm time-input" ngf-select="parseFile(channel, $file);" ng-model="file"
+                        name="file" ngf-pattern="'audio/*'" ngf-accept="'audio/*'" ngf-max-size="10MB">Upload</div>
+                    <span class="text-info">{{channel.fileName}}</span>
                 </div>
             </div>
             <div class="row">
@@ -164,6 +178,18 @@
                 </div>
             </div>
             <div class="row">
+                <div class="col-2 text-right">
+                    <label>Disable ADSR Timing</label>
+                </div>
+                <div style="margin-left: 15px;" class="time-input">
+                    <input type="checkbox" ng-model="channel.disableADSR" />
+                </div>
+                <div class="col-8" style="font-size: 12px;">
+                    <span>This will prevent ADSR timing. Use it when we have a predefined track or music. <b>Peak
+                            Amplitude</b> will still be in effect.</span>
+                </div>
+            </div>
+            <div class="row">
                 <div class="col-3">
                     <b>ADSR timing</b>
                 </div>
@@ -209,6 +235,30 @@
                 </div>
                 <div class="col-5">
                     <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.r" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-2">
+                    <b>Filter ({{channel.filter.enabled? 'enabled':'disabled'}})</b>
+                </div>
+                <div class="col-2">
+                    <input type="checkbox" ng-model="channel.filter.enabled" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-3">
+                    <label>Frequency (range) <span>{{channel.filter.frequencyValue}}</span></label>
+                </div>
+                <div class="col-5">
+                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.filter.frequencyValue" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-3">
+                    <label>Quality (range) <span>{{channel.filter.qualityValue}}</span></label>
+                </div>
+                <div class="col-5">
+                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.filter.qualityValue" />
                 </div>
             </div>
             <div class="row" ng-if="channel.type === 'osc'">
@@ -257,7 +307,7 @@
                 </div>
             </div>
         </div>
-        {{channel}}
+        <!-- {{channel}} -->
     </div>
     <div class="text-center" ng-if="currentProject.channels.length > 0">
         <button class="btn btn-success" ng-click="play()">Play</button>

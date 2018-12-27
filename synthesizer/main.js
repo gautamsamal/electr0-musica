@@ -1,4 +1,4 @@
-angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, $http, SynthFactory) => {
+angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, $http, Upload, SynthFactory) => {
 
     $scope.recording = {
         start: 0,
@@ -62,6 +62,42 @@ angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, $http, S
         $scope.$digest();
     });
 
+    $scope.exportAudioFromURL = function (channel) {
+        if (!channel.url) {
+            return;
+        }
+        var context = new AudioContext();
+        var request = new XMLHttpRequest();
+        request.open('get', channel.url, true);
+        request.responseType = 'arraybuffer';
+
+        request.onload = function () {
+            channel.base64Src = Utils.arrayBufferToBase64(request.response);
+            context.decodeAudioData(request.response, function (buffer) {
+                channel.duration = +(buffer.duration.toFixed(2));
+                $scope.$digest();
+            });
+        };
+        request.onerror = function (err) {
+            console.log("** An error occurred during the XHR request");
+            alert('Unable to load the audio from URL');
+        };
+        request.send();
+    };
+
+    $scope.parseFile = function (channel, file) {
+        Upload.mediaDuration(file).then(function (durationInSeconds) {
+            Utils.convertFileToArrayBuffer(file, function (arrayBuffer) {
+                channel.base64Src = Utils.arrayBufferToBase64(arrayBuffer);
+                channel.fileName = file.name;
+                channel.duration = +(durationInSeconds.toFixed(2));
+            });
+        }).catch(err => {
+            console.error(err);
+            alert('Unable to parse the file. Try again.')
+        })
+    };
+
     $scope.loadConfiguration = function (configName) {
         if (!configName) {
             return;
@@ -74,6 +110,7 @@ angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, $http, S
             $scope.currentProject.name = configName;
             $scope.currentProject.channels = res.data;
             $scope.selectedProjectName = '';
+            alert('Project loaded successfully');
         }).catch(err => {
             alert('Can not load the selected project. Check console for errors!');
         });

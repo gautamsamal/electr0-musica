@@ -1,4 +1,4 @@
-const mainApp = angular.module('mainApp', []);
+const mainApp = angular.module('mainApp', ['ngFileUpload']);
 
 mainApp.run(($rootScope) => {
     $rootScope.appName = 'Electro Musica';

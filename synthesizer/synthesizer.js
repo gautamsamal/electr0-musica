@@ -32,10 +32,38 @@ class Utils {
         };
         fileReader.readAsArrayBuffer(blob);
     }
+
+    static arrayBufferToBase64(buffer) {
+        var binary = '';
+        var bytes = new Uint8Array(buffer);
+        var len = bytes.byteLength;
+        for (var i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+    }
+
+    static base64ToArrayBuffer(base64) {
+        var binary_string = window.atob(base64);
+        var len = binary_string.length;
+        var bytes = new Uint8Array(len);
+        for (var i = 0; i < len; i++) {
+            bytes[i] = binary_string.charCodeAt(i);
+        }
+        return bytes.buffer;
+    }
+
+    static convertFileToArrayBuffer($file, callback) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            callback(e.target.result);
+        };
+        reader.readAsArrayBuffer($file);
+    };
 }
 
 class AudioBeat {
-    constructor(context, destination, delay = 0, duration, startAfter = 0) {
+    constructor(context, destination, delay = 0, duration, startAfter = 0, disableADSR = false) {
         if (!context || !context instanceof AudioContext) {
             throw new Error('Invalid audio context');
         }
@@ -46,6 +74,7 @@ class AudioBeat {
         this.duration = duration ? parseFloat(parseFloat(duration).toFixed(2)) : null;
 
         this.offSet = this.offSet + this.startAfter;
+        this.disableADSR = disableADSR;
     }
 }
 
@@ -73,12 +102,17 @@ class GainADSR {
         return parseFloat((this.a + this.d + this.r).toFixed(2));
     }
 
-    setup(context, source, offSet = 0, duration) {
+    setup(context, source, offSet = 0, duration, disableADSR) {
         this.context = context;
         this.gain = this.context.createGain();
         if (source) {
             this.source = source;
             source.connect(this.gain);
+        }
+
+        if (disableADSR) {
+            this.gain.gain.value = this.amp;
+            return;
         }
 
         this.gain.gain.value = 0;
@@ -161,11 +195,54 @@ class FrequencyStream {
     }
 }
 
+class Filter {
+    constructor(context) {
+        this.context = context;
+        this.FREQ_MUL = 7000;
+        this.QUAL_MUL = 30;
+        this.type = 'lowpass';
+
+        this.filter = context.createBiquadFilter();
+        this.filter.type = this.type;
+        // Initial frequency
+        this.filter.frequency.value = 5000;
+    }
+
+    setFrequency(value) {
+        // Clamp the frequency between the minimum value (40 Hz) and half of the
+        // sampling rate.
+        var minValue = 40;
+        var maxValue = this.context.sampleRate / 2;
+        // Logarithm (base 2) to compute how many octaves fall in the range.
+        var numberOfOctaves = Math.log(maxValue / minValue) / Math.LN2;
+        // Compute a multiplier from 0 to 1 based on an exponential scale.
+        var multiplier = Math.pow(2, numberOfOctaves * (value - 1.0));
+        // Get back to the frequency value between min and max.
+        this.filter.frequency.value = maxValue * multiplier;
+        console.log('FREQ===', this.filter.frequency.value);
+    }
+
+    setQuality(value) {
+        this.filter.Q.value = value * this.QUAL_MUL;
+    }
+
+    setup(source, frequencyValue, qualityValue) {
+        this.setFrequency(frequencyValue);
+        this.setQuality(qualityValue);
+        if (source) {
+            this.source = source;
+            source.connect(this.filter);
+        }
+        return this.filter;
+    }
+}
+
 class Oscillator extends AudioBeat {
-    constructor(context, destination, type = 'sine', delay = 0, duration, startAfter = 0) {
-        super(context, destination, delay, duration, startAfter);
+    constructor(context, destination, type = 'sine', delay = 0, duration, startAfter = 0, disableADSR) {
+        super(context, destination, delay, duration, startAfter, disableADSR);
         this.type = type;
         this.osc = this.context.createOscillator();
+        this.source = this.osc;
     }
 
     getOsc() {
@@ -174,11 +251,18 @@ class Oscillator extends AudioBeat {
 
     setupGain(gainADSR) {
         this.gainADSR = gainADSR;
-        this.gainADSR.setup(this.context, this.osc, this.offSet, this.duration);
+        this.gainADSR.setup(this.context, this.source, this.offSet, this.duration, this.disableADSR);
         if (!this.duration) {
             this.duration = this.gainADSR.gainDuration;
         }
         this.gainADSR.connectOutput(this.destination);
+    }
+
+    setupFilter(filter = {}) {
+        if (!filter.enabled) {
+            return;
+        }
+        this.source = new Filter(this.context).setup(this.source, filter.frequencyValue, filter.qualityValue);
     }
 
     setupFrequency(frequencyStream) {
@@ -186,7 +270,8 @@ class Oscillator extends AudioBeat {
         this.frequencyStream.setup(this.osc, this.offSet);
     }
 
-    play(gainADSR, frequencyStream) {
+    play(gainADSR, frequencyStream, filter) {
+        this.setupFilter(filter);
         this.setupGain(gainADSR);
         this.setupFrequency(frequencyStream);
         this.osc.start(this.offSet);
@@ -197,11 +282,12 @@ class Oscillator extends AudioBeat {
 }
 
 class BufferPlayer extends AudioBeat {
-    constructor(context, destination, type, delay = 0, duration, startAfter = 0, loop, playbackrate = 1) {
-        super(context, destination, delay, duration, startAfter);
+    constructor(context, destination, type, delay = 0, duration, startAfter = 0, disableADSR, loop, playbackrate = 1) {
+        super(context, destination, delay, duration, startAfter, disableADSR);
         this.loop = loop;
         this.type = type;
         this.audioBuffer = this.context.createBufferSource();
+        this.source = this.audioBuffer;
         // Not applicable for noise buffer.
         if (this.type === 'noise') {
             return;
@@ -213,23 +299,6 @@ class BufferPlayer extends AudioBeat {
             this.audioBuffer.playbackRate.value = parseFloat(playbackrate);
         }
     }
-
-    static loadFromHTTP(url, context, callback) {
-        var request = new XMLHttpRequest();
-        request.open('get', url, true);
-        request.responseType = 'arraybuffer';
-
-        request.onload = function () {
-            context.decodeAudioData(request.response, function (buffer) {
-                callback(null, buffer);
-            });
-        };
-        request.onerror = function (err) {
-            console.log("** An error occurred during the transaction");
-            callback(err)
-        };
-        request.send();
-    };
 
     createBufferSource() {
         // Create an empty (duration) stereo/mono buffer at the sample rate of the AudioContext
@@ -256,15 +325,23 @@ class BufferPlayer extends AudioBeat {
 
     setupGain(gainADSR) {
         this.gainADSR = gainADSR;
-        this.gainADSR.setup(this.context, this.audioBuffer, this.offSet, this.duration);
+        this.gainADSR.setup(this.context, this.source, this.offSet, this.duration, this.disableADSR);
         this.gainADSR.connectOutput(this.destination);
     }
 
-    playNoise(gainADSR) {
+    setupFilter(filter = {}) {
+        if (!filter.enabled) {
+            return;
+        }
+        this.source = new Filter(this.context).setup(this.source, filter.frequencyValue, filter.qualityValue);
+    }
+
+    playNoise(gainADSR, filter) {
         if (!this.duration) {
             this.duration = gainADSR.gainDuration;
         }
         this.audioBuffer.buffer = this.createBufferSource();
+        this.setupFilter(filter);
         this.setupGain(gainADSR);
         this.audioBuffer.start(this.offSet);
         this.audioBuffer.stop(this.offSet + this.duration);
@@ -272,8 +349,9 @@ class BufferPlayer extends AudioBeat {
         console.log('Noise would stop at', this.offSet + this.duration);
     }
 
-    playFromBuffer(buffer, gainADSR) {
+    playFromBuffer(buffer, gainADSR, filter) {
         this.audioBuffer.buffer = buffer;
+        this.setupFilter(filter);
         this.setupGain(gainADSR);
         this.audioBuffer.start(this.offSet);
         this.audioBuffer.stop(this.offSet + this.duration);
@@ -286,15 +364,22 @@ class AudioChannel {
     constructor() {
         this.gain = new GainADSR();
         this.frequency = new FrequencyStream();
+        this.filter = {
+            enabled: false,
+            frequencyValue: 1,
+            qualityValue: 0
+        }
         this.delay = 0;
         this.wave = 'sine';
         this.type = 'osc';
         this.loop = false;
+        this.disableADSR = false;
         this.startAfter = 0;
         this.duration = 0;
         this.url;
         this.playbackrate = 1;
         this.timerWorker;
+        this.base64Src;
     }
 
     static parseJSON(json) {
@@ -307,17 +392,20 @@ class AudioChannel {
 
     preConfigure(context) {
         return new Promise((resolve, reject) => {
-            if (this.type === 'external') {
-                return BufferPlayer.loadFromHTTP(this.url, context, (err, buffer) => {
-                    this.buffer = buffer;
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve();
-                });
+            try {
+                if ((this.type === 'external' || this.type === 'upload') && this.base64Src) {
+                    //Convert base64 to Array buffer.
+                    const buffer = Utils.base64ToArrayBuffer(this.base64Src);
+                    return context.decodeAudioData(buffer, (buf) => {
+                        this.buffer = buf;
+                        resolve();
+                    });
+                }
+                return resolve();
+            } catch (err) {
+                reject(err);
             }
-            return resolve();
-        })
+        });
     }
 
     /**
@@ -340,7 +428,7 @@ class AudioChannel {
             playback = this._playNoiseChannel;
         }
 
-        if (this.type === 'external') {
+        if (this.type === 'external' || this.type === 'upload') {
             playback = this._playExternalChannel;
         }
 
@@ -407,12 +495,12 @@ class AudioChannel {
 
         // Oscillator
         console.log('OSC config', this);
-        const osc = new Oscillator(context, this.destination, this.wave, this.delay, this.duration, this.startAfter);
+        const osc = new Oscillator(context, this.destination, this.wave, this.delay, this.duration, this.startAfter, this.disableADSR);
         const oscillator = osc.getOsc();
         oscillator.onended = function () {
             // console.log('OSC Ended', context.currentTime);
         };
-        osc.play(this.gain, this.frequency);
+        osc.play(this.gain, this.frequency, this.filter);
     };
 
     /**
@@ -427,14 +515,14 @@ class AudioChannel {
         this.loopCount++;
         // Noise
         console.log('BUFF config', this);
-        const noise = new BufferPlayer(context, this.destination, this.type, this.delay, this.duration, this.startAfter, this.loop);
+        const noise = new BufferPlayer(context, this.destination, this.type, this.delay, this.duration, this.startAfter, this.disableADSR, this.loop);
         const bufferNode = noise.getBufferSourceNode();
         bufferNode.onended = function () {
             // console.log('Buffer Ended', context.currentTime);
         };
 
         // Will create a new buffer if not provided.
-        noise.playNoise(this.gain);
+        noise.playNoise(this.gain, this.filter);
     };
 
     _playExternalChannel(context) {
@@ -445,14 +533,14 @@ class AudioChannel {
         this.loopCount++;
         // Noise
         console.log('EXTERNAL config', this);
-        const buffPlayer = new BufferPlayer(context, this.destination, this.type, this.delay, this.duration, this.startAfter, this.loop);
+        const buffPlayer = new BufferPlayer(context, this.destination, this.type, this.delay, this.duration, this.startAfter, this.disableADSR, this.loop);
         const bufferNode = buffPlayer.getBufferSourceNode();
         bufferNode.onended = function () {
             console.log('Buffer Player Ended', context.currentTime);
         };
 
         // Will create a new buffer if not provided.
-        buffPlayer.playFromBuffer(this.buffer, this.gain);
+        buffPlayer.playFromBuffer(this.buffer, this.gain, this.filter);
     };
 }
 
@@ -506,12 +594,16 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
                 if (channel.mute) {
                     return;
                 }
+                if ((channel.type === 'external' || channel.type === 'upload') && !channel.buffer) {
+                    return;
+                }
                 const channelInstance = channel.configure(context, destination);
                 if (channelInstance.timerWorker) {
                     timerWorkers.push(channelInstance.timerWorker);
                 }
             });
         }).catch(err => {
+            console.log(err);
             alert('Error while processing channels');
         });
     };
