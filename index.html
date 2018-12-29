@@ -32,15 +32,58 @@
 </head>
 
 <body ng-app="mainApp" ng-controller="MainCtrl">
-    <div style="font-weight: 600;">
-        --App name: {{appName}} &#9786;<br />
-        --Stage: POC (Use in your own risk &#9731;)
+    <div class="welcome-screen" ng-if="false">
+        <div class="app-title">
+            <span class="shake">&#9835;</span>
+            <span class="app-name" style="display: block;">
+                <span>{{appName}}<span class="blink">|</span></span>
+            </span>
+        </div>
+
+        <div class="action-btns">
+            <button class="btn btn-app" ng-class="{'box-shadow-active': projectMode === 'NEW'}" ng-click="projectMode = 'NEW'">Create
+                New Project</button>
+            <button class="btn btn-app" ng-class="{'box-shadow-active': projectMode === 'LOAD'}" ng-click="projectMode = 'LOAD'">Load
+                Recent Project</button>
+        </div>
+        <div class="action-div">
+            <div ng-if="projectMode === 'NEW'">
+                <label>Enter a name:</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Enter Project Name" />
+                    <span class="btn input-group-addon">Start</span>
+                </div>
+            </div>
+            <div ng-if="projectMode === 'LOAD'">
+                <label>Select a project:</label>
+                <div class="input-group">
+                    <select class="form-control">
+                        <option value="">-Select-</option>
+                    </select>
+                    <span class="btn input-group-addon">Start</span>
+                </div>
+            </div>
+        </div>
+        <div style="height: 100px;">
+            &nbsp;
+        </div>
+    </div>
+    <div class="context-loader">
+        <div ng-if="appMode === 'Sounds'" ng-include="'sound-clips/sounds.html'"></div>
+        <div ng-if="appMode === 'Editor'" ng-include="'editor/editor.html'"></div>
+        <div ng-if="appMode === 'MainLine'" ng-include="'sampler/main.html'"></div>
+        <div ng-if="appMode === 'Synth'" ng-include="'synthesizer/main.html'"></div>
     </div>
 
-    <div ng-if="appMode === 'Sounds'" ng-include="'sound-clips/sounds.html'"></div>
-    <div ng-if="appMode === 'Editor'" ng-include="'editor/editor.html'"></div>
-    <div ng-if="appMode === 'MainLine'" ng-include="'sampler/main.html'"></div>
-    <div ng-if="appMode === 'Synth'" ng-include="'synthesizer/main.html'"></div>
+    <script>
+        $(document).ready(function () {
+            $(window).on('resize', function () {
+                $('.welcome-screen').height(Math.max($(window).innerHeight(), $(document).innerHeight()));
+            });
+            $('.welcome-screen').height(Math.max($(window).innerHeight(), $(document).innerHeight()));
+        });
+    </script>
 </body>
+
 
 </html>

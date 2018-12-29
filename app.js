@@ -16,6 +16,8 @@ mainApp.controller('MainCtrl', ($rootScope, $scope) => {
     $scope.appMode = 'MainLine';
     // $scope.appMode = 'Synth';
 
+    $scope.projectMode = null;
+
     $scope.currentProject = {
         Title: 'My Project',
         configuration: {
