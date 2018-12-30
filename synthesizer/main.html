@@ -56,7 +56,7 @@
     <br />
     <h4>Channels</h4>
     <div class="float-right" style="padding: 10px;background: #add8e6;margin-top: -50px;">
-        <button class="btn btn-sm btn-primary " ng-click="newChannel();" style="margin-left:10px;">New
+        <button class="btn btn-sm btn-app-color " ng-click="newChannel();" style="margin-left:10px;">New
             Channel</button>
         OR
         <select class="" ng-model="channelSelector">
@@ -66,7 +66,7 @@
             <option>drum-kicks1</option>
             <option>drum-kicks2</option>
         </select>
-        <button class="btn btn-sm btn-primary " ng-click="loadChannel(channelSelector);channelSelector = null;" style="margin-left:10px;">Load
+        <button class="btn btn-sm btn-app-color " ng-click="loadChannel(channelSelector);channelSelector = null;" style="margin-left:10px;">Load
             Channel</button>
     </div>
     <div class="channel-panel" ng-repeat="channel in currentProject.channels">
@@ -118,7 +118,7 @@
                     <label>Upload a File</label>
                 </div>
                 <div class="col-5">
-                    <div class="btn btn-primary btn-sm time-input" ngf-select="parseFile(channel, $file);" ng-model="file"
+                    <div class="btn btn-app-color btn-sm time-input" ngf-select="parseFile(channel, $file);" ng-model="file"
                         name="file" ngf-pattern="'audio/*'" ngf-accept="'audio/*'" ngf-max-size="10MB">Upload</div>
                     <span class="text-info">{{channel.fileName}}</span>
                 </div>
@@ -296,12 +296,13 @@
                                     <input class="time-input" type="number" min="0" ng-model="freq.frequency" />
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary" ng-click="channel.frequency.remove($index)">Delete</button>
+                                    <button class="btn btn-sm btn-app-color" ng-click="channel.frequency.remove($index)">Delete</button>
                                 </td>
                             </tr>
                             <tr>
                                 <td colspan="3" class="text-center">
-                                    <button class="btn btn-sm btn-primary" ng-click="channel.frequency.add();">Add New</button>
+                                    <button class="btn btn-sm btn-app-color" ng-click="channel.frequency.add();">Add
+                                        New</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -328,8 +329,8 @@
             <h4>Save your efforts?</h4>
             <label>Name it: <input type="text" ng-model="currentProject.name" /></label>
             &nbsp;
-            <button class="btn btn-sm btn-primary" ng-click="updateProject()">Save or Update</button>
-            <div>
+            <button class="btn btn-sm btn-app-color" ng-click="updateProject()">Save or Update</button>
+            <div style="font-size: 12px;">
                 * If the Project name already exists, it will get updated!
             </div>
         </div>
@@ -340,21 +341,24 @@
                 <option ng-repeat="proj in savedProjects">{{proj}}</option>
             </select>
             &nbsp;
-            <button class="btn btn-sm btn-primary" ng-click="loadConfiguration(selectedProjectName)">Load Configuration</button>
-            <div>
+            <button class="btn btn-sm btn-app-color" ng-click="loadConfiguration(selectedProjectName)">Load
+                Configuration</button>
+            <div style="font-size: 12px;">
                 * Will replace the current configuration with the incoming!
             </div>
         </div>
     </div>
 
     <hr />
-    <h4>Make it a track?</h4>
+    <h4>Make it a track?<span style="font-size: 12px;"> (Will update the current track with extracted audio)</span></h4>
     <label>From <input class="time-input" type="number" min="0" ng-model="recording.start" /> sec</label>
     to
     <label><input class="time-input" type="number" min="0" ng-model="recording.end" /> sec</label>
     <div>
-        <button class="btn btn-sm btn-primary" ng-click="record()">Play & Extract to track</button>
-        &nbsp; Current Time {{SynthFactory.currentContext.currentTime | number: 1}}
+        <button class="btn btn-sm btn-app-color" ng-click="record()" ng-disabled="controlFlags.recording">Play &
+            Extract & Update</button>
+        <span ng-if="controlFlags.recording">&nbsp;
+            Recording Time {{SynthFactory.currentContext.currentTime | number: 1}}</span>
     </div>
     <div>
         <br />

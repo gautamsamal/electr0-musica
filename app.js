@@ -19,7 +19,7 @@ mainApp.controller('MainCtrl', ($rootScope, $scope) => {
     $scope.projectMode = null;
 
     $scope.currentProject = {
-        Title: 'My Project',
+        title: 'My Project',
         configuration: {
             tracks: []
         }

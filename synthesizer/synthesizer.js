@@ -60,6 +60,18 @@ class Utils {
         };
         reader.readAsArrayBuffer($file);
     };
+
+    static base64ToAudioBuffer(base64, callback) {
+        const arrayBuffer = Utils.base64ToArrayBuffer(base64);
+        const context = new AudioContext();
+        context.decodeAudioData(arrayBuffer, function (buffer) {
+            console.log('base64ToAudioBuffer Buffer---', buffer)
+            callback(null, buffer);
+        }, function (e) {
+            console.log("base64ToAudioBuffer Error with decoding audio data" + e.err);
+            callback(e);
+        });
+    }
 }
 
 class AudioBeat {
@@ -669,8 +681,9 @@ angular.module('mainApp').factory('SynthFactory', ($rootScope, SynthJSONFactory)
             mediaRecorder.onstop = function (evt) {
                 // Make blob out of our blobs, and open it.
                 var blob = new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' });
-                document.querySelector("audio").src = URL.createObjectURL(blob);
-                Utils.convertBlobToAudioBuffer(context, blob);
+                Utils.convertFileToArrayBuffer(blob, function (buffer) {
+                    $rootScope.$broadcast('Record:Timer:Done', buffer);
+                });
             };
         }
         return destination;

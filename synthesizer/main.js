@@ -4,6 +4,9 @@ angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, $http, U
         start: 0,
         end: 1
     };
+    $scope.controlFlags = {
+        recording: false
+    };
     $scope.selectedProjectName = '';
     $scope.currentProject = {
         channels: []
@@ -50,6 +53,8 @@ angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, $http, U
     };
 
     $scope.record = function () {
+        delete $scope.recording.base64Src;
+        $scope.controlFlags.recording = true;
         SynthFactory.playChannels($scope.currentProject.channels, $scope.recording);
     };
 
@@ -59,6 +64,14 @@ angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, $http, U
 
     // Update on record time
     $scope.$on('Record:Timer:Update', () => {
+        $scope.$digest();
+    });
+
+    $scope.$on('Record:Timer:Done', (event, buffer) => {
+        $scope.controlFlags.recording = false;
+        $scope.recording.base64Src = Utils.arrayBufferToBase64(buffer);
+        $scope.updateProjectWithTrack();
+        _upadateTheAudioPlayback($scope.recording.base64Src);
         $scope.$digest();
     });
 
@@ -107,28 +120,54 @@ angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, $http, U
                 projectName: configName
             }
         }).then(res => {
-            $scope.currentProject.name = configName;
-            $scope.currentProject.channels = res.data;
+            $scope.currentProject.name = res.data.projectName;
+            $scope.currentProject.channels = res.data.channels;
+            $scope.currentProject.trackId = res.data.trackId;
             $scope.selectedProjectName = '';
             alert('Project loaded successfully');
+
+            if ($scope.currentProject.trackId) {
+                _loadTrack();
+            }
         }).catch(err => {
             alert('Can not load the selected project. Check console for errors!');
         });
     };
 
-    $scope.updateProject = function () {
+    $scope.updateProject = function (updateTrack) {
         if (!$scope.currentProject.name) {
             return;
         }
-        $http.post('/api/synthesizer/update', {
+
+        const payload = {
             projectName: $scope.currentProject.name,
-            configuration: $scope.currentProject.channels
-        }).then(res => {
+            channels: $scope.currentProject.channels,
+            trackId: $scope.currentProject.trackId
+        };
+
+        if (updateTrack) {
+            payload.trackConfig = $scope.recording;
+        }
+
+        $http.post('/api/synthesizer/update', payload).then(res => {
+            if (res.data.trackId) {
+                $scope.currentProject.trackId = res.data.trackId;
+            }
             _loadSavedConfigs();
             alert('Successfully updated');
         }).catch(err => {
             alert('Can not load the selected project. Check console for errors!');
         });
+    };
+
+    $scope.updateProjectWithTrack = function () {
+        //TODO Check for recording
+        if (!$scope.recording.base64Src) {
+            alert('No recorded buffer found. Please record and then try to save.');
+            return;
+        }
+
+        $scope.updateProject(true);
     };
 
     function _loadSavedConfigs() {
@@ -137,6 +176,23 @@ angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, $http, U
         }).catch(err => {
             alert('Can not load saved project. Check console for errors!');
         });
+    }
+
+    function _loadTrack() {
+        $http.get('/api/track/load', {
+            params: {
+                trackId: $scope.currentProject.trackId
+            }
+        }).then(res => {
+            $scope.recording = res.data;
+            _upadateTheAudioPlayback($scope.recording.base64Src);
+        }).catch(err => {
+            console.error('Can not load saved track.', err);
+        });
+    }
+
+    function _upadateTheAudioPlayback(base64Src) {
+        document.querySelector("audio").src = `data:audio/ogg;base64,${base64Src}`;
     }
 
     $scope.newChannel();

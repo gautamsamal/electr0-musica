@@ -61,6 +61,12 @@ Animations
 
 /*CSS*/
 
+body {
+    font-family: sans-serif;
+    /* background-color: #000000d6;
+    color: #fff; */
+}
+
 .context-loader {
     padding: 0px 10px 0px 10px;
 }
@@ -109,6 +115,11 @@ Animations
     color: #fff;
 }
 
+.btn-app-color {
+    background: #2f8a2f;
+    color: #fff;
+}
+
 .action-btns {
     text-align: center;
     margin-top: 20px;
@@ -134,9 +145,13 @@ Animations
 /*----------------EDITOR--------------------*/
 
 #editor .tracks {
-    width: 100px;
+    width: 200px;
     float: left;
     border-right: 2px solid #fff;
+}
+
+#editor .tracks>div {
+    padding: 3px;
 }
 
 #editor .tracks>div, #editor .timeline>div {
@@ -174,7 +189,7 @@ Animations
 
 .tracker {
     display: inline-block;
-    border: 1px solid transparent;
+    /* border: 1px solid transparent; Problems with resizable*/
     border-radius: 10px;
     font-weight: 100;
     font-size: 13px;

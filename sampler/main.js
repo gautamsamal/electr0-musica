@@ -1,4 +1,4 @@
-angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, MainLinePlayer) => {
+angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http, MainLinePlayer) => {
 
     const trackSource = ['synth', 'external'];
     const secLength = 80;
@@ -19,6 +19,7 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, MainLi
 
     $scope.closeSynthesizer = function () {
         $scope.controlFlags.trackLoader = false;
+        $scope.loadSavedTracks();
     };
 
     // Player ready
@@ -72,18 +73,27 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, MainLi
         //Clear previous elems
         $(`#track-path-${track.id}`).html('');
         const segments = track.segments;
+        const maxWidthInPx = +((track.duration * secLength).toFixed(2));
         segments.forEach((seg, index) => {
-            return;
+            seg.startInPx = +((seg.start * secLength).toFixed(2));
+            seg.endInPx = +((seg.end * secLength).toFixed(2));
+            seg.offsetInPx = +((seg.offset * secLength).toFixed(2));
             // DODO : height of tracker on change of height.
-            const elem = $(`<span class="tracker" segment-index="${index}"
-                style="min-width: ${minimizedSecLength}px; width: ${seg.end - seg.start}px;">&nbsp;</span>`);
+            const elem = $(`<span class="tracker text-center" segment-index="${index}"
+                style="min-width: ${minimizedSecLength}px; max-width: ${maxWidthInPx}px; width: ${seg.endInPx - seg.startInPx}px;">
+                <span class="start">${seg.start}</span> - <span class="end">${seg.end}</span></span>`);
             $(`#track-path-${track.id}`).append(elem);
 
             const lastElem = $(`#track-path-${track.id} > span`).last();
             const lastElemLeft = lastElem.position().left;
 
             const rowLeft = $(`#track-path-${track.id}`).position().left;
-            $(elem).css('left', seg.start - (parseInt(lastElemLeft) - parseInt(rowLeft)) + 'px');
+            $(elem).css('left', seg.offsetInPx - (parseInt(lastElemLeft) - parseInt(rowLeft)) + 'px');
+            //Set left and width;
+            seg.left = $(elem).position().left;
+            seg.width = $(elem).outerWidth();
+
+            // return;
 
             $(elem).draggable({
                 containment: "parent",
@@ -106,20 +116,23 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, MainLi
                 containment: `#track-path-${track.id}`,
                 handles: "e, w",
                 grid: [minimizedSecLength, 0],
+                maxWidth: maxWidthInPx,
                 stop: function (event, ui) {
-                    console.log('Resize stop : ', ui.position);
-                    _updateSegmentPositions();
+                    console.log('Resize stop : ', ui);
+                    console.log('Resize stop : ', seg);
+                    _updateSegmentPositions(true);
                     $scope.$digest();
                 }
             });
         });
     }
 
-    function _updateSegmentPositions() {
+    function _updateSegmentPositions(resized) {
         $('.tracker').each((ind, elem) => {
             const trackerElem = $(elem);
+            const tracker = trackerElem.parent();
             const segmentNo = parseInt(trackerElem.attr('segment-index'));
-            const trackId = trackerElem.parent().attr('track-id');
+            const trackId = tracker.attr('track-id');
 
             const track = $scope.configuration.tracks.find(t => t.id === trackId);
             if (!track) {
@@ -127,25 +140,82 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, MainLi
             }
 
             if (track.segments && track.segments[segmentNo]) {
-                track.segments[segmentNo].start = parseInt(trackerElem.position().left) - parseInt(trackerElem.parent().position().left);
-                track.segments[segmentNo].end = track.segments[segmentNo].start + trackerElem.outerWidth();
+                const seg = track.segments[segmentNo];
+                const leftPad = +(trackerElem.position().left) - +(trackerElem.parent().position().left)
+                seg.offset = +((leftPad / secLength).toFixed(2));
+
+                if (resized) {
+                    const leftChange = +(((trackerElem.position().left - seg.left) / secLength).toFixed(2));
+                    seg.start += leftChange;
+                    console.log('Left change : ', leftChange);
+
+                    if (!leftChange) {
+                        const rightChange = +(((trackerElem.outerWidth() - seg.width) / secLength).toFixed(2));
+                        seg.end += rightChange;
+                        console.log('Right change : ', rightChange);
+                    }
+                }
+                console.log(seg.left, seg.width)
+                seg.left = trackerElem.position().left;
+                seg.width = trackerElem.outerWidth();
+                console.log(seg.left, seg.width)
+
+                trackerElem.find('.start').html('' + seg.start.toFixed(2));
+                trackerElem.find('.end').html('' + seg.end.toFixed(2));
             }
 
         });
     }
 
-    $scope.addTrack = function () {
-        const track = {
-            id: 'track' + (trackIds++),
-            source: trackSource[0],
-            name: 'track' + (trackIds),
-            segments: []
-        };
-        $scope.configuration.tracks.push(track);
-        _addTrack(track);
-        _addTrackElems(track);
+    $scope.addTrack = function (trackInfo) {
+        Utils.base64ToAudioBuffer(trackInfo.base64Src, function (err, buffer) {
+            if (err) {
+                alert(err);
+                return;
+            }
+            const track = {
+                id: 'track' + (trackIds++),
+                name: trackInfo.synthName,
+                synthName: trackInfo.synthName,
+                audioBuffer: buffer,
+                duration: buffer.duration,
+                segments: []
+            };
+            $scope.configuration.tracks.push(track);
+            // Add a default segment
+            track.segments.push({
+                start: 0,
+                end: buffer.duration,
+                offset: 0
+            });
+            _addTrack(track);
+            _addTrackElems(track);
+            console.log(track);
+            alert('Track is added.');
+        });
     };
+
+    $scope.loadSavedTracks = function () {
+        $http.get('/api/synthesizer/list').then(res => {
+            $scope.savedProjects = res.data;
+        }).catch(err => {
+            alert('Can not load saved project. Check console for errors!');
+        });
+    }
+
+    $scope.loadSelectedTrack = function (syntProjectName) {
+        $http.get('/api/track/load/bysnth', {
+            params: {
+                projectName: syntProjectName
+            }
+        }).then(res => {
+            $scope.addTrack(res.data);
+        }).catch(err => {
+            alert('Can not load selected track. Check console for errors!');
+        });
+    }
 
     fillTimeLines();
     fillConfiguration();
+    $scope.loadSavedTracks();
 });
