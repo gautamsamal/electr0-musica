@@ -3,10 +3,8 @@ angular.module('mainApp').factory('MainLinePlayer', ($rootScope) => {
 
     };
 
-    service.loadPlayback = (trackItem) => {
-        // When ready
-        trackItem.__ready = true;
-        $rootScope.$broadcast('Track:ready');
+    service.loadPlayback = (tracks) => {
+
     };
 
     return service;

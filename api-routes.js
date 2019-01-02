@@ -26,16 +26,70 @@ function _checkAndCreateFile(dirPath, isFolder) {
     }
     return stat;
 }
+
+function _listFilesFromDir(dir) {
+    return new Promise((resolve, reject) => {
+        fs.readdir(dir, function (err, files) {
+            if (err) {
+                return reject(err);
+            }
+
+            const projects = [];
+            files.forEach(file => {
+                file = String(file);
+                if (file.substring(file.lastIndexOf('.') + 1, file.length) === 'json') {
+                    projects.push(file.substr(0, file.lastIndexOf('.')));
+                }
+            });
+            return resolve(projects);
+        });
+    });
+}
 // Create folders if not present;
 _checkAndCreateFile(__projectDir, true);
 _checkAndCreateFile(__synthDir, true);
 _checkAndCreateFile(__tracksDir, true);
 
-function _createProject(req, res, next) {
-    res.send('Poject created');
+function updateProject(req, res, next) {
+    if (!req.body.projectName) {
+        return next('Project name not found');
+    }
+
+    const fileName = req.body.projectName + '.json';
+    fs.writeFile(path.join(__projectDir, fileName), JSON.stringify(req.body.configuration || {}, null, 4), (err) => {
+        if (err)
+            return next(err);
+        console.log(`The file - ${fileName} has been saved!`);
+        res.send();
+    });
 };
 
-async function _updateSynthProject(req, res, next) {
+function listProjects(req, res, next) {
+    _listFilesFromDir(__projectDir).then(files => {
+        res.send(files);
+    }).catch(next);
+}
+
+function loadProject(req, res, next) {
+    if (!req.query.projectName) {
+        return next('Project name is not found');
+    }
+    const fileName = String(req.query.projectName) + '.json';
+    const fileStat = _checkAndCreateFile(path.join(__projectDir, fileName));
+    if (!fileStat) {
+        return next('Project is not found. Contact us.');
+    }
+
+    fs.readFile(path.join(__projectDir, fileName), (err, data) => {
+        if (err)
+            return next(err);
+        console.log(JSON.parse(data));
+
+        return res.send(data);
+    });
+}
+
+async function updateSynthProject(req, res, next) {
     const { projectName, channels, trackId, trackConfig } = req.body;
     if (!projectName) {
         return next('Project name is invalid');
@@ -68,21 +122,10 @@ async function _updateSynthProject(req, res, next) {
     }
 };
 
-function _listSynthesizers(req, res, next) {
-    fs.readdir(__synthDir, function (err, files) {
-        if (err) {
-            return next(err);
-        }
-
-        const projects = [];
-        files.forEach(file => {
-            file = String(file);
-            if (file.substring(file.lastIndexOf('.') + 1, file.length) === 'json') {
-                projects.push(file.substr(0, file.lastIndexOf('.')));
-            }
-        });
-        return res.send(projects);
-    });
+function listSynthesizers(req, res, next) {
+    _listFilesFromDir(__synthDir).then(files => {
+        res.send(files);
+    }).catch(next);
 };
 
 function loadSynthesizer(req, res, next) {
@@ -128,7 +171,7 @@ function _updateTrack(trackId, trackConfig) {
     });
 }
 
-function _loadTrack(req, res, next) {
+function loadTrack(req, res, next) {
     if (!req.query.trackId) {
         return next('Track id is invalid');
     }
@@ -147,11 +190,11 @@ function _loadTrack(req, res, next) {
     });
 }
 
-function _loadTrackBySentheziser(req, res, next) {
+function loadTrackBySentheziser(req, res, next) {
     _loadSynthesizer(req.query.projectName).then(synth => {
         if (synth && synth.trackId) {
             req.query.trackId = synth.trackId;
-            return _loadTrack(req, res, next);
+            return loadTrack(req, res, next);
         }
         return next('Track exists but not saved yet. Please go to manage tracks and save a clip.');
     }).catch(err => {
@@ -160,15 +203,19 @@ function _loadTrackBySentheziser(req, res, next) {
 }
 
 module.exports = (app) => {
-    app.get('/api/project', _createProject);
+    app.post('/api/project', updateProject);
 
-    app.post('/api/synthesizer/update', _updateSynthProject);
+    app.get('/api/project', listProjects);
 
-    app.get('/api/synthesizer/list', _listSynthesizers);
+    app.get('/api/project/load', loadProject);
+
+    app.post('/api/synthesizer/update', updateSynthProject);
+
+    app.get('/api/synthesizer/list', listSynthesizers);
 
     app.get('/api/synthesizer/load', loadSynthesizer);
 
-    app.get('/api/track/load', _loadTrack);
+    app.get('/api/track/load', loadTrack);
 
-    app.get('/api/track/load/bysnth', _loadTrackBySentheziser);
+    app.get('/api/track/load/bysnth', loadTrackBySentheziser);
 }
