@@ -1,4 +1,4 @@
-angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http, $state, $timeout, MainLinePlayer) => {
+angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http, $state, $compile, $timeout, MainLinePlayer) => {
 
     const secLength = 80;
     const minimizedSecLength = secLength / 8;
@@ -60,7 +60,6 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
                 return;
             }
             promiseArr.push(_loadSelectedTrack(track.synthName).then(({ trackInfo, buffer }) => {
-                track.id = 'track' + (trackIds++);
                 track.loaded = true;
                 track.audioBuffer = buffer;
                 if (track.duration !== buffer.duration) {
@@ -136,8 +135,18 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         $scope.loadSavedTracks();
     };
 
+    $scope.removeTrack = function (index) {
+        if ($scope.configuration.tracks && $scope.configuration.tracks[index]) {
+            $scope.configuration.tracks.splice('index', 1);
+            trackIds = 0;
+            $('.track').remove();
+            $('.track-timing').remove();
+            fillConfiguration();
+        }
+    };
+
     const fillTimeLines = function () {
-        const maxTime = 50 || 0;
+        const maxTime = 20 || 0;
         const panelWidth = $('#editor-panel .scale').width() - 100;
         const secPanels = Math.max(parseInt(panelWidth / secLength), parseInt(maxTime));
 
@@ -149,15 +158,27 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
     };
 
     const fillConfiguration = function () {
-        $scope.configuration.tracks.forEach(track => {
-            _addTrack(track);
+        $scope.configuration.tracks.forEach((track, index) => {
+            _addTrack(track, index);
             _addTrackElems(track);
         });
     };
 
-    function _addTrack(track) {
+    function _addTrack(track, index) {
+        // Add a unique id;
+        track.id = 'track' + (trackIds++);
         const mainTrack = $('#editor-panel .tracks');
-        mainTrack.append(`<div class="track">${track.name}</div>`);
+        mainTrack.append($compile(`<div class="track">
+        ${track.name}
+        <span style="float: right;">
+            <i class="fa"
+                title="mute/unmute"
+                ng-class="{'fa-volume-off': configuration.tracks[${index}].mute,'fa-volume-up': !configuration.tracks[${index}].mute}"
+                ng-click="configuration.tracks[${index}].mute = !configuration.tracks[${index}].mute" style="cursor: pointer;"
+                aria-hidden="true"></i>
+            <i class="fa fa-trash" title="remove track" ng-click="removeTrack(${index});" style="cursor: pointer;" aria-hidden="true"></i>
+        </span>
+        </div>`)($scope));
 
         const parentWidth = $('#editor-panel .scale').width();
 
@@ -177,10 +198,16 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
             // DODO : height of tracker on change of height.
             const elem = $(`<span class="tracker text-center" segment-index="${index}"
                 style="min-width: ${minimizedSecLength}px; max-width: ${maxWidthInPx}px; width: ${seg.endInPx - seg.startInPx}px;">
-                <span class="start">${seg.start}</span> - <span class="end">${seg.end}</span></span>`);
+                <span style="position:relative;display:block;">
+                <canvas height="50" width="${maxWidthInPx}" style="position: absolute;top:0px;left:-${seg.startInPx}px;"></canvas>
+                <span class="start">${seg.start.toFixed(2)}</span> - <span class="end">${seg.end.toFixed(2)}</span>
+                </span>
+                </span>`);
             $(`#track-path-${track.id}`).append(elem);
 
             $(elem).css('left', seg.offsetInPx + 'px');
+
+            _dummy($(elem).find('canvas')[0], track.audioBuffer);
 
             // return;
 
@@ -323,10 +350,16 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
                 console.log('old', seg.left, seg.width)
                 seg.left = trackerElem[0].offsetLeft;//trackerElem.position().left;
                 seg.width = trackerElem.outerWidth();
-                console.log('new ', seg.left, seg.width)
+                console.log('new ', seg.left, seg.width);
+
+                //Upadte pixels
+                seg.startInPx = +((seg.start * secLength).toFixed(2));
+                seg.endInPx = +((seg.end * secLength).toFixed(2));
+                seg.offsetInPx = +((seg.offset * secLength).toFixed(2));
 
                 trackerElem.find('.start').html('' + seg.start.toFixed(2));
                 trackerElem.find('.end').html('' + seg.end.toFixed(2));
+                trackerElem.find('canvas').css('left', `-${seg.startInPx}px`);
             }
 
         });
@@ -378,7 +411,6 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         $scope.controlFlags.ready = false;
         _loadSelectedTrack(syntProjectName).then(({ trackInfo, buffer }) => {
             const track = {
-                id: 'track' + (trackIds++),
                 name: trackInfo.synthName,
                 synthName: trackInfo.synthName,
                 audioBuffer: buffer,
@@ -393,7 +425,7 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
                 end: buffer.duration,
                 offset: 0
             });
-            _addTrack(track);
+            _addTrack(track, $scope.configuration.tracks.length - 1);
             _addTrackElems(track);
             console.log(track);
             alert('Track is added.');
@@ -436,6 +468,46 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         });
     }
 
+    function _dummy(canvas, buffer) {
+        var leftChannel = buffer.getChannelData(0),
+            width = canvas.width,
+            height = canvas.height,
+            ctx = canvas.getContext('2d');
+
+        var maxSample = buffer.duration * width;
+        var step = Math.ceil(leftChannel.length / maxSample)
+
+        ctx.globalAlpha = 0.06;
+        ctx.strokeStyle = '#800101';
+
+        ctx.translate(0, height / 2);
+        for (var i = 0; i < maxSample; i++) {
+            // on which line do we get ?
+            var x = Math.floor(width * i / maxSample);
+            var y = (leftChannel[i * step] * height / 2);
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x + 1, y);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    // Player related functions
+
+    $scope.play = function () {
+        MainLinePlayer.loadPlayback($scope.configuration.tracks, secLength);
+    }
+    $scope.pause = function () {
+        MainLinePlayer.pause($scope.configuration.tracks);
+    }
+    $scope.resume = function () {
+        MainLinePlayer.resume($scope.configuration.tracks);
+    }
+    $scope.stop = function () {
+        MainLinePlayer.stop($scope.configuration.tracks);
+    }
+
     function _digest() {
         $scope.$digest();
     }
@@ -446,6 +518,5 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         $scope.loadSavedTracks();
         updateContextMenu();
         $scope.controlFlags.ready = true;
-        _digest();
     });
 });

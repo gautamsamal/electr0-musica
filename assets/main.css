@@ -158,9 +158,13 @@ body {
 }
 
 #editor .tracks>div, #editor .timeline>div {
-    height: 30px;
+    height: 50px;
     color: #fff;
     background: #7a9b76;
+}
+
+#editor .tracks>div:first-child, #editor .timeline>div:first-child {
+    height: 30px;
 }
 
 #editor .tracks>div:nth-child(even), #editor .timeline>div:nth-child(even) {
@@ -188,6 +192,7 @@ body {
 
 #editor .timeline {
     overflow: auto;
+    position: relative;
 }
 
 .tracker {
@@ -196,13 +201,17 @@ body {
     border-radius: 10px;
     font-weight: 100;
     font-size: 13px;
-    background: #8001015c;
+    background: #8001012e;
     text-align: center;
     min-height: 100%;
     line-height: 2;
     cursor: pointer;
     overflow: hidden;
     position: absolute;
+}
+
+.tracker .start, .tracker .end {
+    color: #55fc00;
 }
 
 .track-timing {
@@ -217,4 +226,13 @@ body {
     background: #fff;
     width: 100%;
     padding: 0px 10px;
+}
+
+.timer-liner {
+    position: absolute;
+    background: #000;
+    height: 100%;
+    width: 2px;
+    left: 0px;
+    top: 0px;
 }

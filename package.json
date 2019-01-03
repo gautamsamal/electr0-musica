@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/gautamsamal/electr0-musica#readme",
   "dependencies": {
+    "audio-buffer-utils": "^5.1.1",
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
     "uuid": "^3.3.2"

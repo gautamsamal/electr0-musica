@@ -15,7 +15,7 @@ app.use((req, res, next) => {
         if (req.url === '' || req.url === '/') {
             req.url = '/index.html';
         }
-        const filePath = path.join(__dirname, req.url);
+        const filePath = path.join(__dirname, req.url.split('?')[0]);
         try {
             const stat = fs.statSync(filePath);
             if (!stat.isFile()) {
