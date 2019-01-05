@@ -170,6 +170,12 @@ angular.module('mainApp').controller('PlayerCtrl', ($rootScope, $scope, $http, U
         $scope.updateProject(true);
     };
 
+    $scope.hideCollapse = function (collapseId) {
+        console.log(collapseId);
+        
+        $(collapseId).collapse('hide');
+    };
+
     function _loadSavedConfigs() {
         $http.get('/api/synthesizer/list').then(res => {
             $scope.savedProjects = res.data;

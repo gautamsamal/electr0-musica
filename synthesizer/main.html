@@ -50,24 +50,43 @@
     }
 }
 
+.channel-header {
+    padding: 10px;
+    background: #add8e6;
+    margin-top: -24px;
+    border-radius: 6px 6px 0 0;
+}
+
+#channel-btn-container {
+    float: right;
+    margin-top: 3px;
+    margin-right: -4px;
+}
+
+.ch-cust-padding {
+    padding: 2px 20px;
+}
 </style>
 <div ng-controller="PlayerCtrl" id="Synthesizer">
     <h3 class="text-center logo">Synthesizer 1.0 <span>&#9835;</span></h3>
     <br />
-    <h4>Channels</h4>
-    <div class="float-right" style="padding: 10px;background: #add8e6;margin-top: -50px;">
-        <button class="btn btn-sm btn-app-color " ng-click="newChannel();" style="margin-left:10px;">New
-            Channel</button>
-        OR
-        <select class="" ng-model="channelSelector">
-            <option value="">Pre defined channel</option>
-            <option>kick</option>
-            <option>external</option>
-            <option>drum-kicks1</option>
-            <option>drum-kicks2</option>
-        </select>
-        <button class="btn btn-sm btn-app-color " ng-click="loadChannel(channelSelector);channelSelector = null;" style="margin-left:10px;">Load
-            Channel</button>
+    <div class="channel-header">
+        <span style="font-size: 24px;">Channels</span>
+        <div id="channel-btn-container">
+            <button class="btn btn-sm btn-app-color " ng-click="newChannel();" style="margin-left:10px;">New
+                Channel</button>
+            OR
+            <select class="" ng-model="channelSelector">
+                <option value="">Pre defined channel</option>
+                <option>kick</option>
+                <option>external</option>
+                <option>drum-kicks1</option>
+                <option>drum-kicks2</option>
+            </select>
+            <button class="btn btn-sm btn-app-color " ng-click="loadChannel(channelSelector);channelSelector = null;"
+                style="margin-left:10px;">Load
+                Channel</button>
+        </div>
     </div>
     <div class="channel-panel" ng-repeat="channel in currentProject.channels">
         <div>
@@ -80,44 +99,44 @@
                 <div class="col-2 text-right">
                     <label>Source Type</label>
                 </div>
-                <div class="col-2">
-                    <select class="time-input" ng-model="channel.type">
+                <div class="col-1">
+                    <select ng-model="channel.type">
                         <option value="osc">Oscillator</option>
                         <option value="noise">Noise</option>
                         <option value="external">External</option>
                         <option value="upload">Upload</option>
                     </select>
                 </div>
-            </div>
-            <div class="row" ng-if="channel.type === 'osc'">
-                <div class="col-2 text-right">
+
+                <!-- For channel type: Oscillator -->
+                <div class="col-2 offset-1 text-right" ng-if="channel.type === 'osc'">
                     <label>Wave type</label>
                 </div>
-                <div class="col-2">
-                    <select class="time-input" ng-model="channel.wave">
+                <div ng-if="channel.type === 'osc'" class="col-3">
+                    <select ng-model="channel.wave">
                         <option>sine</option>
                         <option>square</option>
                         <option>sawtooth</option>
                         <option>triangle</option>
                     </select>
                 </div>
-            </div>
-            <div class="row" ng-if="channel.type === 'external'">
-                <div class="col-2 text-right">
+                
+                <!-- For channel type: External -->
+                <div ng-if="channel.type === 'external'" class="col-2 offset-1 text-right">
                     <label>URL (mp3/wav)</label>
                 </div>
-                <div class="col-5">
+                <div ng-if="channel.type === 'external'" class="col-4">
                     <input type="text" ng-model="channel.url" style="width: 100%" />
                 </div>
-                <div class="col-1">
+                <div ng-if="channel.type === 'external'" class="col-1">
                     <a style="text-decoration: underline;cursor: pointer;" ng-click="exportAudioFromURL(channel)">Export</a>
                 </div>
-            </div>
-            <div class="row" ng-if="channel.type === 'upload'">
-                <div class="col-2 text-right">
+                
+                <!-- For channel type: Upload -->
+                <div ng-if="channel.type === 'upload'" class="col-2 offset-1 text-right">
                     <label>Upload a File</label>
                 </div>
-                <div class="col-5">
+                <div ng-if="channel.type === 'upload'" class="col-6">
                     <div class="btn btn-app-color btn-sm time-input" ngf-select="parseFile(channel, $file);" ng-model="file"
                         name="file" ngf-pattern="'audio/*'" ngf-accept="'audio/*'" ngf-max-size="10MB">Upload</div>
                     <span class="text-info">{{channel.fileName}}</span>
@@ -138,20 +157,22 @@
                 <div style="margin-left: 15px;">
                     <input class="time-input" type="number" min="0" ng-model="channel.startAfter" />
                 </div>
-                <div class="col-6" style="font-size: 12px;">
+                <div class="col-3" style="font-size: 12px;">
                     <span>Will be applicable to start of the bit, will not be included in loop or afterwards</span>
                 </div>
-            </div>
-            <div class="row">
+
                 <div class="col-2 text-right">
                     <label>Duration</label>
                 </div>
                 <div style="margin-left: 15px;">
                     <input class="time-input" type="number" min="0" ng-model="channel.duration" />
                 </div>
-                <div class="col-6" style="font-size: 12px;">
+                <div class="col-3" style="font-size: 12px;">
                     <span>Should be greater than ADSR total time. Useful if we want buffer time after ADSR cycle.</span>
                 </div>
+            </div>
+            <div class="row">
+                
             </div>
             <div class="row">
                 <div class="col-2 text-right">
@@ -179,136 +200,157 @@
                     <input type="checkbox" ng-model="channel.mute" />
                 </div>
             </div>
-            <div class="row">
-                <div class="col-2 text-right">
-                    <label>Disable ADSR Timing</label>
+
+            <!--  -->
+            <div id="accordion{{$index}}">
+                <div class="card">
+                    <div class="card-header ch-cust-padding">
+                        <h5 class="mb-0">
+                            <input type="checkbox" ng-model="channel.disableADSR" ng-change="hideCollapse('#adsrTiming{{$index}}')"
+                                title="This will prevent ADSR timing. Use it when we have a predefined track or music. Peak
+                                    Amplitude will still be in effect." />
+                            <button class="btn btn-link" data-toggle="collapse" data-target="#adsrTiming{{$index}}"
+                                ng-disabled="channel.disableADSR">
+                                ADSR timing
+                            </button>
+                        </h5>
+                        <span ng-if="!channel.disableADSR" class="float-right" style="margin-top: -32px;">Total Time:
+                            <b>{{channel.gain.gainDuration}}</b></span>
+                    </div>
+
+                    <div id="adsrTiming{{$index}}" class="collapse" data-parent="#accordion{{$index}}">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-3">
+                                    <label>Peak Amplitude (gain) <span>{{channel.gain.amp}}</span></label>
+                                </div>
+                                <div class="col-5">
+                                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.amp" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3">
+                                    <label>Attack (time) <span>{{channel.gain.a}}</span></label>
+                                </div>
+                                <div class="col-5">
+                                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.a" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3">
+                                    <label>Decay (time) <span>{{channel.gain.d}}</span></label>
+                                </div>
+                                <div class="col-5">
+                                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.d" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3">
+                                    <label>Sustain (gain) <span>{{channel.gain.s}}</span></label>
+                                </div>
+                                <div class="col-5">
+                                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.s" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3">
+                                    <label>Release (time) <span>{{channel.gain.r}}</span></label>
+                                </div>
+                                <div class="col-5">
+                                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.r" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div style="margin-left: 15px;" class="time-input">
-                    <input type="checkbox" ng-model="channel.disableADSR" />
+
+                <div class="card">
+                    <div class="card-header ch-cust-padding">
+                        <h5 class="mb-0">
+                            <input type="checkbox" ng-model="channel.filter.enabled" ng-change="hideCollapse('#filter{{$index}}')" />
+                            <button class="btn btn-link" data-toggle="collapse" data-target="#filter{{$index}}"
+                                ng-disabled="!channel.filter.enabled">
+                                Filter
+                            </button>
+                        </h5>
+                    </div>
+
+                    <div id="filter{{$index}}" class="collapse" data-parent="#accordion{{$index}}">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-3">
+                                    <label>Frequency (range) <span>{{channel.filter.frequencyValue}}</span></label>
+                                </div>
+                                <div class="col-5">
+                                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.filter.frequencyValue" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3">
+                                    <label>Quality (range) <span>{{channel.filter.qualityValue}}</span></label>
+                                </div>
+                                <div class="col-5">
+                                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.filter.qualityValue" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-8" style="font-size: 12px;">
-                    <span>This will prevent ADSR timing. Use it when we have a predefined track or music. <b>Peak
-                            Amplitude</b> will still be in effect.</span>
+
+                <div class="card" ng-if="channel.type === 'osc'">
+                    <div class="card-header ch-cust-padding">
+                        <h5 class="mb-0">
+                            <button class="btn btn-link" data-toggle="collapse" data-target="#spectrum{{$index}}">
+                                Frequency Spectrum
+                            </button>
+                        </h5>
+                    </div>
+
+                    <div id="spectrum{{$index}}" class="collapse" data-parent="#accordion{{$index}}">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6 offset-3">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    Time
+                                                </th>
+                                                <th>
+                                                    Frequency
+                                                </th>
+                                                <th>
+                                                    Action
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="freq in channel.frequency.frequencies">
+                                                <td>
+                                                    <input class="time-input" type="number" min="0" ng-model="freq.time" />
+                                                </td>
+                                                <td>
+                                                    <input class="time-input" type="number" min="0" ng-model="freq.frequency" />
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-app-color" ng-click="channel.frequency.remove($index)">Delete</button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="3" class="text-center">
+                                                    <button class="btn btn-sm btn-app-color" ng-click="channel.frequency.add();">Add
+                                                        New</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-3">
-                    <b>ADSR timing</b>
-                </div>
-                <div class="col-5">
-                    <label>Total Time: <b>{{channel.gain.gainDuration}}</b></label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-3">
-                    <label>Peak Amplitude (gain) <span>{{channel.gain.amp}}</span></label>
-                </div>
-                <div class="col-5">
-                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.amp" />
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-3">
-                    <label>Attack (time) <span>{{channel.gain.a}}</span></label>
-                </div>
-                <div class="col-5">
-                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.a" />
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-3">
-                    <label>Decay (time) <span>{{channel.gain.d}}</span></label>
-                </div>
-                <div class="col-5">
-                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.d" />
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-3">
-                    <label>Sustain (gain) <span>{{channel.gain.s}}</span></label>
-                </div>
-                <div class="col-5">
-                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.s" />
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-3">
-                    <label>Release (time) <span>{{channel.gain.r}}</span></label>
-                </div>
-                <div class="col-5">
-                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.r" />
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-2">
-                    <b>Filter ({{channel.filter.enabled? 'enabled':'disabled'}})</b>
-                </div>
-                <div class="col-2">
-                    <input type="checkbox" ng-model="channel.filter.enabled" />
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-3">
-                    <label>Frequency (range) <span>{{channel.filter.frequencyValue}}</span></label>
-                </div>
-                <div class="col-5">
-                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.filter.frequencyValue" />
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-3">
-                    <label>Quality (range) <span>{{channel.filter.qualityValue}}</span></label>
-                </div>
-                <div class="col-5">
-                    <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.filter.qualityValue" />
-                </div>
-            </div>
-            <div class="row" ng-if="channel.type === 'osc'">
-                <div class="col-12">
-                    <b>Frequency Spectrum</b>
-                </div>
-            </div>
-            <div class="row" ng-if="channel.type === 'osc'">
-                <div class="col-3">
-                    &nbsp;
-                </div>
-                <div class="col-5">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>
-                                    Time
-                                </th>
-                                <th>
-                                    Frequency
-                                </th>
-                                <th>
-                                    Action
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr ng-repeat="freq in channel.frequency.frequencies">
-                                <td>
-                                    <input class="time-input" type="number" min="0" ng-model="freq.time" />
-                                </td>
-                                <td>
-                                    <input class="time-input" type="number" min="0" ng-model="freq.frequency" />
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-app-color" ng-click="channel.frequency.remove($index)">Delete</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="text-center">
-                                    <button class="btn btn-sm btn-app-color" ng-click="channel.frequency.add();">Add
-                                        New</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <!--  -->
         </div>
         <!-- {{channel}} -->
     </div>
