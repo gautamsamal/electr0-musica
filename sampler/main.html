@@ -1,38 +1,38 @@
 <style>
-.project-header {
-    background-color: #343a40;
-    border-radius: 8px;
-    color: white;
-    margin-top: 20px;
-    margin-bottom: 10px;
-    font-size: 26px;
-    padding: 4px;
-}
+    .project-header {
+        background-color: #343a40;
+        border-radius: 8px;
+        color: white;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        font-size: 26px;
+        padding: 4px;
+    }
 
-span.project-state {
-    margin: 2px;
-    border-radius: 8px;
-    font-size: 14px;
-    vertical-align: middle;
-}
+    span.project-state {
+        margin: 2px;
+        border-radius: 8px;
+        font-size: 14px;
+        vertical-align: middle;
+    }
 
-span.project-state.ready {
-    background-color: green;
-}
+    span.project-state.ready {
+        background-color: green;
+    }
 
-span.project-state.not-ready {
-    background-color: red;
-}
+    span.project-state.not-ready {
+        background-color: red;
+    }
 
-#btn-save {
-    position: absolute;
-    top: 28px;
-    right: 18px;
-}
+    #btn-save {
+        position: absolute;
+        top: 28px;
+        right: 18px;
+    }
 
-#btn-load {
-    border-radius: 0 5px 5px 0
-}
+    #btn-load {
+        border-radius: 0 5px 5px 0
+    }
 </style>
 
 <div id="editor" ng-controller="MainLineCtrl">
@@ -78,7 +78,7 @@ span.project-state.not-ready {
             </span>
         </div>
     </div>
-    <div class="track-loader" ng-if="controlFlags.trackLoader">
+    <div class="track-loader" ng-if="controlFlags.trackLoader" style="z-index: 2000;">
         <div style="position: relative;">
             <div style="position: absolute; top:0px;z-index: 1;">
                 <a style="font-weight: 600;cursor: pointer;" class="text-primary" ng-click="closeSynthesizer()">&lt; Go
