@@ -178,6 +178,7 @@ class Oscillator extends AudioBeat {
         super(context, destination, delay, duration, startAfter, disableADSR);
         this.type = type;
         this.osc = this.context.createOscillator();
+        this.osc.type = type;
         this.source = this.osc;
     }
 
