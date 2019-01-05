@@ -6,8 +6,12 @@ class BufferTrackLoader {
         this.audioBuffer.buffer = this.buffer;
     }
 
-    setup(offset = 0, start = 0, end = this.buffer.duration) {
-        this.audioBuffer.connect(this.context.destination);
+    setup(amp = 1, offset = 0, start = 0, end = this.buffer.duration) {
+        this.gain = this.context.createGain();
+        this.gain.gain.value = amp;
+
+        this.audioBuffer.connect(this.gain);
+        this.gain.connect(this.context.destination);
         this.audioBuffer.start(offset, start, (end - start));
     }
 }
@@ -53,7 +57,7 @@ angular.module('mainApp').factory('MainLinePlayer', ($rootScope) => {
             }
             track.segments.forEach(seg => {
                 console.log('Playing seg', seg);
-                new BufferTrackLoader(audioContext, track.audioBuffer).setup(seg.offset, seg.start, seg.end);
+                new BufferTrackLoader(audioContext, track.audioBuffer).setup(seg.amp, seg.offset, seg.start, seg.end);
             });
         });
         _loadTrackLine();

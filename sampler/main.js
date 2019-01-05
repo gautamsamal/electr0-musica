@@ -1,6 +1,8 @@
 angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http, $state, $compile, $timeout, MainLinePlayer) => {
 
     const secLength = 80;
+    const maxHeight = 60;
+    const minHeight = 10;
     const minimizedSecLength = secLength / 8;
     let trackIds = 0;
 
@@ -168,7 +170,7 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         // Add a unique id;
         track.id = 'track' + (trackIds++);
         const mainTrack = $('#editor-panel .tracks');
-        mainTrack.append($compile(`<div class="track">
+        mainTrack.append($compile(`<div class="track" style="height: ${maxHeight}px;">
         ${track.name}
         <span style="float: right;">
             <i class="fa"
@@ -183,7 +185,7 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         const parentWidth = $('#editor-panel .scale').width();
 
         // Add timeers
-        $('#editor-panel .timeline').append(`<div class="track-timing" id="track-path-${track.id}" track-id="${track.id}" style="width: ${parentWidth}px"></div>`);
+        $('#editor-panel .timeline').append(`<div class="track-timing" id="track-path-${track.id}" track-id="${track.id}" style="width: ${parentWidth}px;height: ${maxHeight}px"></div>`);
     }
 
     function _addTrackElems(track) {
@@ -192,14 +194,18 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         const segments = track.segments;
         const maxWidthInPx = +((track.duration * secLength).toFixed(2));
         segments.forEach((seg, index) => {
+            if (!seg.amp) {
+                seg.amp = 1;
+            }
             seg.startInPx = +((seg.start * secLength).toFixed(2));
             seg.endInPx = +((seg.end * secLength).toFixed(2));
             seg.offsetInPx = +((seg.offset * secLength).toFixed(2));
+            seg.heightInPx = +((seg.amp * maxHeight).toFixed(2));
             // DODO : height of tracker on change of height.
             const elem = $(`<span class="tracker text-center" segment-index="${index}"
-                style="min-width: ${minimizedSecLength}px; max-width: ${maxWidthInPx}px; width: ${seg.endInPx - seg.startInPx}px;">
+                style="min-width: ${minimizedSecLength}px; max-width: ${maxWidthInPx}px; width: ${seg.endInPx - seg.startInPx}px;min-height: ${minHeight}px;height: ${seg.heightInPx}px;">
                 <span style="position:relative;display:block;">
-                <canvas height="50" width="${maxWidthInPx}" style="position: absolute;top:0px;left:-${seg.startInPx}px;"></canvas>
+                <canvas height="${seg.heightInPx}px" width="${maxWidthInPx}" style="position: absolute;top:0px;left:-${seg.startInPx}px;"></canvas>
                 <span class="start">${seg.start.toFixed(2)}</span> - <span class="end">${seg.end.toFixed(2)}</span>
                 </span>
                 </span>`);
@@ -207,7 +213,7 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
 
             $(elem).css('left', seg.offsetInPx + 'px');
 
-            _dummy($(elem).find('canvas')[0], track.audioBuffer);
+            _renderWaveForm($(elem).find('canvas')[0], track.audioBuffer);
 
             // return;
 
@@ -227,7 +233,7 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
             });
             $(elem).resizable({
                 containment: `#track-path-${track.id}`,
-                handles: "e, w",
+                handles: "e, w, n",
                 // grid: [minimizedSecLength, 0],
                 maxWidth: maxWidthInPx,
                 resize: function (event, ui) {
@@ -348,8 +354,9 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
                     }
                 }
                 console.log('old', seg.left, seg.width)
-                seg.left = trackerElem[0].offsetLeft;//trackerElem.position().left;
+                seg.left = trackerElem[0].offsetLeft;
                 seg.width = trackerElem.outerWidth();
+
                 console.log('new ', seg.left, seg.width);
 
                 //Upadte pixels
@@ -360,6 +367,14 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
                 trackerElem.find('.start').html('' + seg.start.toFixed(2));
                 trackerElem.find('.end').html('' + seg.end.toFixed(2));
                 trackerElem.find('canvas').css('left', `-${seg.startInPx}px`);
+
+                // Check for amplitude change
+                const oldAmp = seg.amp;
+                seg.amp = +((trackerElem[0].clientHeight / maxHeight).toFixed(2));
+                if (oldAmp !== seg.amp) {
+                    trackerElem.find('canvas')[0].height = trackerElem[0].clientHeight;
+                    _renderWaveForm(trackerElem.find('canvas')[0], track.audioBuffer);
+                }
             }
 
         });
@@ -468,7 +483,7 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         });
     }
 
-    function _dummy(canvas, buffer) {
+    function _renderWaveForm(canvas, buffer) {
         var leftChannel = buffer.getChannelData(0),
             width = canvas.width,
             height = canvas.height,
@@ -477,6 +492,7 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         var maxSample = buffer.duration * width;
         var step = Math.ceil(leftChannel.length / maxSample)
 
+        ctx.clearRect(0, 0, width, height);
         ctx.globalAlpha = 0.06;
         ctx.strokeStyle = '#800101';
 

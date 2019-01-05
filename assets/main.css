@@ -158,7 +158,6 @@ body {
 }
 
 #editor .tracks>div, #editor .timeline>div {
-    height: 50px;
     color: #fff;
     background: #7a9b76;
 }
