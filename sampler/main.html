@@ -1,8 +1,46 @@
+<style>
+.project-header {
+    background-color: #343a40;
+    border-radius: 8px;
+    color: white;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 26px;
+    padding: 4px;
+}
+
+span.project-state {
+    margin: 2px;
+    border-radius: 8px;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+span.project-state.ready {
+    background-color: green;
+}
+
+span.project-state.not-ready {
+    background-color: red;
+}
+
+#btn-save {
+    position: absolute;
+    top: 28px;
+    right: 18px;
+}
+
+#btn-load {
+    border-radius: 0 5px 5px 0
+}
+</style>
+
 <div id="editor" ng-controller="MainLineCtrl">
-    <h3 class="text-center" style="margin-top: 20px;">{{currentProject.projectName}} - Main Line</h3>
-    <h5 ng-if="controlFlags.ready" class="text-center text-success">Ready</h5>
-    <h5 ng-if="!controlFlags.ready" class="text-center text-danger">Not Ready</h5>
-    <h6 class="text-center"><a style="cursor: pointer;" ng-click="retrySaving()">Save</a></h6>
+    <div class="project-header text-center">
+        {{currentProject.projectName}} - Main Line
+        <span class="project-state" ng-class="controlFlags.ready ? 'ready' : 'not-ready'" title="{{ controlFlags.ready ? 'Ready' : 'Not Ready'}}">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        <button id="btn-save" class="btn btn-sm btn-success" ng-click="retrySaving()">Save</button>
+    </div>
     <div class="jumbotron" style="margin: auto;background-color: #818481;">
         <div id="editor-panel">
             <div class="tracks">
@@ -31,7 +69,7 @@
                 <option value="">-Select-</option>
                 <option ng-repeat="proj in savedProjects">{{proj}}</option>
             </select>
-            <span class="btn btn-app-color input-group-addon" ng-click="loadSelectedTrack(selectedTrack);">Load</span>
+            <span id="btn-load" class="btn btn-app-color input-group-addon" ng-click="loadSelectedTrack(selectedTrack);">Load</span>
         </div>
         <div class="col-12" style="font-size: 12px;">
             <span>Need a new track or better, synthesize one?
