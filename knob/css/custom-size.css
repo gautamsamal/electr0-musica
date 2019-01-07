@@ -1,0 +1,33 @@
+.rs-container { 
+    height: 60px !important; 
+    width: 60px !important;
+}
+
+.rs-handle { border-top: 5px solid transparent;
+    border-right: 8px solid black;
+    border-bottom: 5px solid transparent; }
+
+.container {
+    margin: 0px !important;
+    padding: 0px !important;
+    background-image: url('../images/knob_Base.png');
+    background-size: 60px 60px;
+    background-repeat: no-repeat;
+    height: 60px !important;
+    width: 60px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.knob-center .col-2{
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.knob-center .knob-label{
+    padding-top: 10px;
+}
+    /* radius, width in js for control width, radius*/
+    /* container for image size */
+    /* rs handle for pointer size */
