@@ -139,43 +139,26 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-3">
-                        <label>Peak Amplitude (gain) <span>{{channel.gain.amp}}</span></label>
+                    <div class="col-2" style="padding-left:10px; padding-right:10px">
+                        <div class="container" circular-range model="channel.gain.amp" min="0" max="1" step="0.01"
+                            value="0.1"></div>
+                        <label class="knob-label">Peak Amplitude (gain) <span>{{channel.gain.amp}}</span></label>
                     </div>
-                    <div class="col-5">
-                        <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.amp" />
+                    <div class="col-2">
+                        <div class="container" circular-range model="channel.gain.a" min="0" max="1" step="0.01" value="0.1"></div>
+                        <label class="knob-label">Attack (time) <span>{{channel.gain.a}}</span></label>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-3">
-                        <label>Attack (time) <span>{{channel.gain.a}}</span></label>
+                    <div class="col-2">
+                        <div class="container" circular-range model="channel.gain.d" min="0" max="1" step="0.01" value="0.1"></div>
+                        <label class="knob-label">Decay (time) <span>{{channel.gain.d}}</span></label>
                     </div>
-                    <div class="col-5">
-                        <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.a" />
+                    <div class="col-2">
+                        <div class="container" circular-range model="channel.gain.s" min="0" max="1" step="0.01" value="0.1"></div>
+                        <label class="knob-label">Sustain (gain) <span>{{channel.gain.s}}</span></label>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-3">
-                        <label>Decay (time) <span>{{channel.gain.d}}</span></label>
-                    </div>
-                    <div class="col-5">
-                        <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.d" />
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-3">
-                        <label>Sustain (gain) <span>{{channel.gain.s}}</span></label>
-                    </div>
-                    <div class="col-5">
-                        <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.s" />
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-3">
-                        <label>Release (time) <span>{{channel.gain.r}}</span></label>
-                    </div>
-                    <div class="col-5">
-                        <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.gain.r" />
+                    <div class="col-2">
+                        <div class="container" circular-range model="channel.gain.r" min="0" max="1" step="0.01" value="0.1"></div>
+                        <label class="knob-label">Release (time) <span>{{channel.gain.r}}</span></label>
                     </div>
                 </div>
                 <div class="row">
