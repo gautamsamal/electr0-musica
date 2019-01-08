@@ -65,17 +65,45 @@ class Gain extends AudioBaseNode {
     }
 }
 
+class WaveShaper extends AudioBaseNode {
+    constructor(context, amount) {
+        super(context);
+        this._waveShaper = this.input = this.output = this.context.createWaveShaper();
+        this._curve = this._waveShaper.curve = this.setup(amount);
+        this._waveShaper.oversample = '4x';
+    }
+
+    setup(amount) {
+        const curve = new Float32Array(this.context.sampleRate);
+        const k = typeof amount === 'number' ? amount : 50;
+        const deg = Math.PI / 180;
+        let i = 0;
+        let x;
+        for (; i < curve.length; ++i) {
+            x = i * 2 / curve.length - 1;
+            curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
+        }
+        return curve;
+    }
+}
+
 class Oscillator extends AudioBaseNode {
-    constructor(context, type, frequency, detune) {
+    constructor(context, type, frequency, detune, frequencyDelay) {
         super(context);
         this._oscNode = this.output = this.context.createOscillator();
         const options = Object.assign(this.__getDefaults(), { type, frequency, detune });
 
         this.frequency = this._oscNode.frequency;
-        this.frequency.value = options.frequency;
         this.detune = this._oscNode.detune;
         this.detune.value = options.detune;
         this._oscNode.type = options.type;
+
+        if (frequencyDelay && frequencyDelay > 0) {
+            // this.frequency.value = 0;
+            this.frequency.exponentialRampToValueAtTime(options.frequency, frequencyDelay);
+        } else {
+            this.frequency.value = options.frequency;
+        }
     }
 
     __getDefaults() {
@@ -105,16 +133,18 @@ class ModulatingOscillator extends AudioBaseNode {
     constructor(context, { type, frequency, detune, frequencyRatio, modulationType }) {
         super(context);
 
-        this._mainOsc = new Oscillator(context, type, frequency, detune);
+        this._mainOsc = new Oscillator(context, type, frequency, detune, 0.05);
+        this._modulationOsc = new Oscillator(context, modulationType, frequency * frequencyRatio, detune, 0.05);
         this._mainGain = new Gain(context);
 
-        this._modulationOsc = new Oscillator(context, modulationType, frequency * frequencyRatio, detune);
+        // Add a slight distortion
+        this._waveShaper = new WaveShaper(context, 10);
+        this._modulationOsc.connect(this._waveShaper);
+        this._waveShaper.connect(this._mainGain, 'param');
 
-        this._modulationOsc.connect(this._mainGain, 'param');
         this._mainOsc.connect(this._mainGain);
 
         this.output = this._mainGain.output;
-        // this._mainGain.connect(this.masterVol);
     }
 
     start() {
@@ -161,7 +191,7 @@ function playSound() {
     const masterVol = new MasterVolume(context);
     const modOsc = new ModulatingOscillator(context, {
         type: 'triangle',
-        frequency: 261.63,
+        frequency: 349.23,
         detune: 0,
         frequencyRatio: 0.5,
         modulationType: 'sine'
