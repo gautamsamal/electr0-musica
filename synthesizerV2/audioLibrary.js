@@ -46,10 +46,11 @@ class AudioConstant extends AudioBaseNode {
 }
 
 class Gain extends AudioBaseNode {
-    constructor(context) {
+    constructor(context, value) {
         super(context);
         this._gainNode = this.input = this.output = this.context.createGain();
         this._param = this._gainNode.gain;
+        // this._param.value = value || 0.00001;
     }
 
     setValueAtTime(value, time = 0) {
@@ -99,7 +100,7 @@ class Oscillator extends AudioBaseNode {
         this._oscNode.type = options.type;
 
         if (frequencyDelay && frequencyDelay > 0) {
-            // this.frequency.value = 0;
+            this.frequency.value = 0.00001;
             this.frequency.exponentialRampToValueAtTime(options.frequency, frequencyDelay);
         } else {
             this.frequency.value = options.frequency;
@@ -114,8 +115,12 @@ class Oscillator extends AudioBaseNode {
         }
     }
 
-    start() {
-        this._oscNode.start();
+    start(time = 0) {
+        this._oscNode.start(this.context.currentTime + time);
+    }
+
+    stop(time = 0) {
+        this._oscNode.stop(this.context.currentTime + time);
     }
 }
 
@@ -133,7 +138,7 @@ class ModulatingOscillator extends AudioBaseNode {
     constructor(context, { type, frequency, detune, frequencyRatio, modulationType }) {
         super(context);
 
-        this._mainOsc = new Oscillator(context, type, frequency, detune, 0.05);
+        this._mainOsc = new Oscillator(context, type, frequency, detune);
         this._modulationOsc = new Oscillator(context, modulationType, frequency * frequencyRatio, detune, 0.05);
         this._mainGain = new Gain(context);
 
@@ -162,10 +167,9 @@ class ADSREnv extends Gain {
 
     setup() {
         const { a = 0, d = 0, s = 0, r = 0 } = this.gainADSR;
+        this.setValueAtTime(0.00001, 0);
         if (a && a > 0) {
-            this.rampValueAtTime(1, a, 'linear');
-        } else {
-            this.setValueAtTime(1, 0);
+            this.rampValueAtTime(1, a);
         }
 
         if (d && d > 0 && s && s > 0) {
@@ -173,7 +177,7 @@ class ADSREnv extends Gain {
         }
 
         if (r && r > 0) {
-            this.rampValueAtTime(0.000001, (a + d + r));
+            this.rampValueAtTime(0.00001, (a + d + r));
         }
     }
 }
@@ -191,7 +195,7 @@ function playSound() {
     const masterVol = new MasterVolume(context);
     const modOsc = new ModulatingOscillator(context, {
         type: 'triangle',
-        frequency: 349.23,
+        frequency: 293.66,
         detune: 0,
         frequencyRatio: 0.5,
         modulationType: 'sine'

@@ -19,7 +19,7 @@ mainApp.config(function ($stateProvider, $locationProvider, $urlRouterProvider) 
     var synthesizer = {
         name: 'synthesizer',
         url: '/synthesizer',
-        templateUrl: 'synthesizer/main.html'
+        templateUrl: 'synthesizerv2/main.html'
     }
 
     $stateProvider.state(welcomePage);
