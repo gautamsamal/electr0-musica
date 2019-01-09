@@ -73,7 +73,7 @@
                 stringType: ["sliderType", "circleShape", "handleShape", "lineCap"]
             };
         },
-        
+
         _init: function () {
             this._isBrowserSupport = this._isBrowserSupported();
             this._isKO = false;
@@ -360,7 +360,7 @@
             }
             if (isSquare) h = w = isNumber(hSize) ? parseFloat(hSize) : this.options.width;
             var diff = (this.options.width + this._border() - w) / 2;
-            this._handles().css({ height: h, width: w, "margin": -h / 2 + "px 0 0 " + diff + "px" });
+            this._handles().css({ height: h, width: w, "margin": (-h / 2) - 2 + "px 0 0 " + (diff - 3) + "px" });
         },
         _handleDefaults: function () {
             return { angle: this._valueToAngle(this.options.min), value: this.options.min };
@@ -579,7 +579,7 @@
                 this._updateARIA(value);
             }
             else if ((this._active == 1 && oAngle <= this._oriAngle(this._handle2.angle)) ||
-                    (this._active == 2 && oAngle >= this._oriAngle(this._handle1.angle)) || this._invertRange) {
+                (this._active == 2 && oAngle >= this._oriAngle(this._handle1.angle)) || this._invertRange) {
 
                 this["_handle" + this._active] = { angle: angle, value: value };
                 this.options.value = this._rangeSlider ? this._handle1.value + "," + this._handle2.value : value;
@@ -943,7 +943,7 @@
         },
         _isBrowserSupported: function () {
             var properties = ["borderRadius", "WebkitBorderRadius", "MozBorderRadius",
-	            "OBorderRadius", "msBorderRadius", "KhtmlBorderRadius"];
+                "OBorderRadius", "msBorderRadius", "KhtmlBorderRadius"];
             for (var i = 0; i < properties.length; i++) {
                 if (document.body.style[properties[i]] !== undefined) return true;
             }
@@ -982,13 +982,13 @@
         },
         _saveInstanceOnID: function () {
             var id = this.id;
-            if (id && typeof window[id] !== "undefined") 
+            if (id && typeof window[id] !== "undefined")
                 window[id] = this;
         },
         _removeData: function () {
             var control = this._dataElement()[0];
             $.removeData && $.removeData(control, pluginName);
-            if (control.id && typeof window[control.id]["_init"] === "function") 
+            if (control.id && typeof window[control.id]["_init"] === "function")
                 delete window[control.id];
         },
         _destroyControl: function () {
@@ -1192,7 +1192,7 @@
                 var _this = new RoundSlider(that, options);
                 _this._saveInstanceOnElement();
                 _this._saveInstanceOnID();
-				
+
                 if (_this._raise("beforeCreate") !== false) {
                     _this._init();
                     _this._raise("create");

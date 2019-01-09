@@ -1,191 +1,322 @@
 <style>
     .channel-row {
-        color: #fff;
+        color: #002101;
+        margin-bottom: 10px!important;
     }
+    .audio-channels{
+        margin-top: 60px;
+    }
+    .time-input{
+     width: 80px;
+     height: 25px;
+}
+.row.inline-options{
+    margin-left: 40px;
+    margin-bottom: 10px;
+}
+.inline-options > div {
+    display: inline-block;
+    margin-right: 20px;
+    text-align: center;
+}
+.badge{
+    cursor: pointer;
+}
+
+.project-header{
+    position: fixed;
+    z-index: 100;
+    width: 100%;
+    top: 0px;
+    left: 0px;
+    margin: 0px;
+    border-radius: 0px;
+}
+.player-control{
+    position: absolute;
+    left: 0px;
+    right: 0px;
+}
+.player-control > span{
+    display: inline-block;
+    background: #333940;
+}
 </style>
-<div ng-controller="SynthV2Ctrl">
+<!--
+    TODO: Add tool-tips
+-->
+<div ng-controller="SynthV2Ctrl" class="syntheziser">
     <div class="project-header text-center">
-        Synthesizer 2.0
-    </div>
-    <div class="jumbotron" style="margin: auto;background-color: #818481;padding: 15px;">
-        <div class="channel-row">
-            <div>
-                <b>#1 Channel</b>
-                <span ng-click="deleteChannel($index)" class="float-right text-warning" style="cursor: pointer;">Remove
-                    Channel</span>
+        <div style="position: relative;">
+            <span>Synthesizer 2.0</span>
+            <div class="player-control">
+                <span>
+                    <button class="btn btn-success btn-sm">Play</button>
+                </span>
             </div>
+        </div>
+    </div>
+    <div class="audio-channels">
+        <div class="jumbotron channel-row" ng-repeat="channel in channels" style="margin: auto;background-color: #818481;padding: 15px;">
             <div>
-                <div class="row">
-                    <div class="col-2 text-right">
-                        <label>Source Type</label>
-                    </div>
-                    <div class="col-2">
-                        <select class="time-input" ng-model="channel.type">
-                            <option value="osc">Oscillator</option>
-                            <option value="noise">Noise</option>
-                            <option value="external">External</option>
-                            <option value="upload">Upload</option>
-                        </select>
-                    </div>
+                <div>
+                    <b>#{{$index + 1}}</b>
+                    <span ng-click="deleteChannel($index)" class="float-right text-warning" style="cursor: pointer;">Remove
+                        Channel</span>
                 </div>
-                <div class="row" ng-if="channel.type === 'osc'">
-                    <div class="col-2 text-right">
-                        <label>Wave type</label>
+                <div>
+                    <div class="row inline-options">
+                        <div>
+                            <label>Source</label>
+                            <div>
+                                <select class="time-input" ng-model="channel.type">
+                                    <option value="osc">Oscillator</option>
+                                    <option value="noise">Noise</option>
+                                    <option value="external">External</option>
+                                    <option value="upload">Upload</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div ng-if="channel.type === 'osc'">
+                            <label>Wave type</label>
+                            <div>
+                                <select class="time-input" ng-model="channel.wave">
+                                    <option>sine</option>
+                                    <option>square</option>
+                                    <option>sawtooth</option>
+                                    <option>triangle</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div ng-if="channel.type === 'osc'">
+                            <label>Frequency</label>
+                            <div>
+                                <input class="time-input" type="number" min="0" ng-model="channel.frequency" />
+                            </div>
+                        </div>
+                        <div ng-if="channel.type === 'osc'">
+                            <label>Detune</label>
+                            <div>
+                                <input class="time-input" type="number" min="0" ng-model="channel.detune" />
+                            </div>
+                        </div>
+                        <div ng-if="channel.type === 'external'">
+                            <label>URL (mp3/wav)</label>
+                            <div>
+                                <input class="time-input" type="text" ng-model="channel.url" style="width: 400px;" />
+                                <a style="text-decoration: underline;cursor: pointer;" ng-click="exportAudioFromURL(channel)">Export</a>
+                            </div>
+                        </div>
+                        <div ng-if="channel.type === 'upload'">
+                            <label>Upload a File</label>
+                            <div>
+                                <div class="btn btn-app-color btn-sm time-input" ngf-select="parseFile(channel, $file);"
+                                    ng-model="file" name="file" ngf-pattern="'audio/*'" ngf-accept="'audio/*'"
+                                    ngf-max-size="10MB">Upload</div>
+                                <span class="text-info">{{channel.fileName}}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-2">
-                        <select class="time-input" ng-model="channel.wave">
-                            <option>sine</option>
-                            <option>square</option>
-                            <option>sawtooth</option>
-                            <option>triangle</option>
-                        </select>
+                    <div class="row inline-options">
+                        <div>
+                            <label>Delay</label>
+                            <div>
+                                <input class="time-input" type="number" min="0" ng-model="channel.delay" />
+                            </div>
+                        </div>
+                        <div>
+                            <label>Starts After</label>
+                            <div>
+                                <input class="time-input" type="number" min="0" ng-model="channel.startAfter" />
+                            </div>
+                        </div>
+                        <div>
+                            <label>Duration</label>
+                            <div>
+                                <input class="time-input" type="number" min="0" ng-model="channel.duration" />
+                            </div>
+                        </div>
+                        <div>
+                            <label>Mute</label>
+                            <div>
+                                <input type="checkbox" ng-model="channel.mute" />
+                            </div>
+                        </div>
+                        <div>
+                            <label>Repeat</label>
+                            <div>
+                                <input type="checkbox" ng-model="channel.loop" />
+                            </div>
+                        </div>
+                        <div ng-if="channel.loop">
+                            <label>Repeat till</label>
+                            <div>
+                                <input class="time-input" type="number" min="0" ng-model="channel.limitRepeatSec" />
+                                sec(s)
+                                &nbsp;or after&nbsp;
+                                <input class="time-input" type="number" min="0" ng-model="channel.limitRepeatCount" />
+                                times
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="row" ng-if="channel.type === 'external'">
-                    <div class="col-2 text-right">
-                        <label>URL (mp3/wav)</label>
+                    <div class="row inline-options">
+                        <div>
+                            <label style="margin-bottom: 0px;">Master volume</label>
+                            <div>
+                                {{channel.masterVolume}}
+                            </div>
+                            <div class="container" circular-range model="channel.masterVolume" min="0" max="1" step="0.01"></div>
+                        </div>
                     </div>
-                    <div class="col-5">
-                        <input type="text" ng-model="channel.url" style="width: 100%" />
+                    <hr />
+                    <div class="row">
+                        <div class="col-3">
+                            <b>ADSR timing</b>
+                            <span class="badge badge-success" ng-if="channel.gain.enabled" ng-click="channel.gain.enabled = false;">ON</span>
+                            <span class="badge badge-danger" ng-if="!channel.gain.enabled" ng-click="channel.gain.enabled = true;">OFF</span>
+                        </div>
+                        <div class="col-3">
+                            <b><label>Total Time: {{channel.gain.gainDuration}}</label></b>
+                        </div>
+                        <div class="col-3">
+                            <label><b>Filter</b></label>
+                            <select class="time-input" ng-model="channel.filter.type">
+                                <option>lowpass</option>
+                                <option>highpass</option>
+                                <option>bandpass</option>
+                            </select>
+                            <span class="badge badge-success" ng-if="channel.filter.enabled" ng-click="channel.filter.enabled = false;">ON</span>
+                            <span class="badge badge-danger" ng-if="!channel.filter.enabled" ng-click="channel.filter.enabled = true;">OFF</span>
+                        </div>
+                        <div class="col-3">
+                            <b><label>Effects</label></b>
+                            <span class="badge badge-success" ng-if="channel.effects.enabled" ng-click="channel.effects.enabled = false;">ON</span>
+                            <span class="badge badge-danger" ng-if="!channel.effects.enabled" ng-click="channel.effects.enabled = true;">OFF</span>
+                        </div>
                     </div>
-                    <div class="col-1">
-                        <a style="text-decoration: underline;cursor: pointer;" ng-click="exportAudioFromURL(channel)">Export</a>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="row inline-options" style="display: inline-block;">
+                                <div>
+                                    <label style="margin-bottom: 0px;">Attack (time)</label>
+                                    <div>
+                                        {{channel.gain.a}}
+                                    </div>
+                                    <div class="container" circular-range model="channel.gain.a" min="0" max="2" step="0.01"></div>
+                                </div>
+                                <div>
+                                    <label style="margin-bottom: 0px;">Decay (time)</label>
+                                    <div>
+                                        {{channel.gain.d}}
+                                    </div>
+                                    <div class="container" circular-range model="channel.gain.d" min="0" max="2" step="0.01"></div>
+                                </div>
+                                <div>
+                                    <label style="margin-bottom: 0px;">Sustain (vol)</label>
+                                    <div>
+                                        {{channel.gain.s}}
+                                    </div>
+                                    <div class="container" circular-range model="channel.gain.s" min="0" max="1" step="0.01"></div>
+                                </div>
+                                <div>
+                                    <label style="margin-bottom: 0px;">Release (time)</label>
+                                    <div>
+                                        {{channel.gain.r}}
+                                    </div>
+                                    <div class="container" circular-range model="channel.gain.r" min="0" max="2" step="0.01"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="row inline-options" style="display: inline-block;">
+                                <div>
+                                    <label style="margin-bottom: 0px;">Frequency (range)</label>
+                                    <div>
+                                        {{channel.filter.frequencyValue}}
+                                    </div>
+                                    <div class="container" circular-range model="channel.filter.frequencyValue" min="0"
+                                        max="1" step="0.01"></div>
+                                </div>
+                                <div>
+                                    <label style="margin-bottom: 0px;">Quality (range)</label>
+                                    <div>
+                                        {{channel.filter.qualityValue}}
+                                    </div>
+                                    <div class="container" circular-range model="channel.filter.qualityValue" min="0"
+                                        max="1" step="0.01"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="row inline-options" style="display: inline-block;">
+                                <div>
+                                    <label style="margin-bottom: 0px;">Bass</label>
+                                    <div>
+                                        {{channel.effects.bass}}
+                                    </div>
+                                    <div class="container" circular-range model="channel.effects.bass" min="0" max="1"
+                                        step="0.01"></div>
+                                </div>
+                                <div>
+                                    <label style="margin-bottom: 0px;">Treble</label>
+                                    <div>
+                                        {{channel.effects.treble}}
+                                    </div>
+                                    <div class="container" circular-range model="channel.effects.treble" min="0" max="1"
+                                        step="0.01"></div>
+                                </div>
+                                <div>
+                                    <label style="margin-bottom: 0px;">Distortion</label>
+                                    <div>
+                                        {{channel.effects.distortion}}
+                                    </div>
+                                    <div class="container" circular-range model="channel.effects.distortion" min="0"
+                                        max="1" step="0.01"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="row" ng-if="channel.type === 'upload'">
-                    <div class="col-2 text-right">
-                        <label>Upload a File</label>
+                    <hr />
+                    <div class="row">
+                        <div class="col-3">
+                            <b>Modulation</b>
+                            <span class="badge badge-success" ng-if="channel.modulation.enabled" ng-click="channel.modulation.enabled = false;">ON</span>
+                            <span class="badge badge-danger" ng-if="!channel.modulation.enabled" ng-click="channel.modulation.enabled = true;">OFF</span>
+                        </div>
                     </div>
-                    <div class="col-5">
-                        <div class="btn btn-app-color btn-sm time-input" ngf-select="parseFile(channel, $file);"
-                            ng-model="file" name="file" ngf-pattern="'audio/*'" ngf-accept="'audio/*'" ngf-max-size="10MB">Upload</div>
-                        <span class="text-info">{{channel.fileName}}</span>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-2 text-right">
-                        <label>Delay</label>
-                    </div>
-                    <div class="col-2">
-                        <input class="time-input" type="number" min="0" ng-model="channel.delay" />
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-2 text-right">
-                        <label>Starts After</label>
-                    </div>
-                    <div style="margin-left: 15px;">
-                        <input class="time-input" type="number" min="0" ng-model="channel.startAfter" />
-                    </div>
-                    <div class="col-6" style="font-size: 12px;">
-                        <span>Will be applicable to start of the bit, will not be included in loop or afterwards</span>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-2 text-right">
-                        <label>Duration</label>
-                    </div>
-                    <div style="margin-left: 15px;">
-                        <input class="time-input" type="number" min="0" ng-model="channel.duration" />
-                    </div>
-                    <div class="col-6" style="font-size: 12px;">
-                        <span>Should be greater than ADSR total time. Useful if we want buffer time after ADSR cycle.</span>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-2 text-right">
-                        <label>Repeat</label>
-                    </div>
-                    <div class="col-2">
-                        <input type="checkbox" ng-model="channel.loop" />
-                    </div>
-                </div>
-                <div class="row" ng-if="channel.loop">
-                    <div class="col-2 text-right">
-                        <label>Repeat Till</label>
-                    </div>
-                    <div class="col-5">
-                        <input class="time-input" type="number" min="0" ng-model="channel.limitRepeatSec" /> sec(s)
-                        &nbsp;or after&nbsp;
-                        <input class="time-input" type="number" min="0" ng-model="channel.limitRepeatCount" /> times
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-2 text-right">
-                        <label>Mute</label>
-                    </div>
-                    <div class="col-2">
-                        <input type="checkbox" ng-model="channel.mute" />
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-2 text-right">
-                        <label>Disable ADSR Timing</label>
-                    </div>
-                    <div style="margin-left: 15px;" class="time-input">
-                        <input type="checkbox" ng-model="channel.disableADSR" />
-                    </div>
-                    <div class="col-8" style="font-size: 12px;">
-                        <span>This will prevent ADSR timing. Use it when we have a predefined track or music. <b>Peak
-                                Amplitude</b> will still be in effect.</span>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-3">
-                        <b>ADSR timing</b>
-                    </div>
-                    <div class="col-5">
-                        <label>Total Time: <b>{{channel.gain.gainDuration}}</b></label>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-2" style="padding-left:10px; padding-right:10px">
-                        <div class="container" circular-range model="channel.gain.amp" min="0" max="1" step="0.01"
-                            value="0.1"></div>
-                        <label class="knob-label">Peak Amplitude (gain) <span>{{channel.gain.amp}}</span></label>
-                    </div>
-                    <div class="col-2">
-                        <div class="container" circular-range model="channel.gain.a" min="0" max="1" step="0.01" value="0.1"></div>
-                        <label class="knob-label">Attack (time) <span>{{channel.gain.a}}</span></label>
-                    </div>
-                    <div class="col-2">
-                        <div class="container" circular-range model="channel.gain.d" min="0" max="1" step="0.01" value="0.1"></div>
-                        <label class="knob-label">Decay (time) <span>{{channel.gain.d}}</span></label>
-                    </div>
-                    <div class="col-2">
-                        <div class="container" circular-range model="channel.gain.s" min="0" max="1" step="0.01" value="0.1"></div>
-                        <label class="knob-label">Sustain (gain) <span>{{channel.gain.s}}</span></label>
-                    </div>
-                    <div class="col-2">
-                        <div class="container" circular-range model="channel.gain.r" min="0" max="1" step="0.01" value="0.1"></div>
-                        <label class="knob-label">Release (time) <span>{{channel.gain.r}}</span></label>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-2">
-                        <b>Filter ({{channel.filter.enabled? 'enabled':'disabled'}})</b>
-                    </div>
-                    <div class="col-2">
-                        <input type="checkbox" ng-model="channel.filter.enabled" />
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-3">
-                        <label>Frequency (range) <span>{{channel.filter.frequencyValue}}</span></label>
-                    </div>
-                    <div class="col-5">
-                        <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.filter.frequencyValue" />
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-3">
-                        <label>Quality (range) <span>{{channel.filter.qualityValue}}</span></label>
-                    </div>
-                    <div class="col-5">
-                        <input type="range" min="0" max="1" step="0.01" value="0.1" ng-model="channel.filter.qualityValue" />
+                    <div class="row inline-options">
+                        <div>
+                            <label>Wave type</label>
+                            <div>
+                                <select class="time-input" ng-model="channel.modulation.wave">
+                                    <option>sine</option>
+                                    <option>square</option>
+                                    <option>sawtooth</option>
+                                    <option>triangle</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label>Frequency</label>
+                            <div>
+                                <input class="time-input" type="number" min="0" ng-model="channel.modulation.frequency" />
+                            </div>
+                        </div>
+                        <div>
+                            <label>Detune</label>
+                            <div>
+                                <input class="time-input" type="number" min="0" ng-model="channel.modulation.detune" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!--Channels ends-->
+
+    <div>
+
     </div>
 </div>
