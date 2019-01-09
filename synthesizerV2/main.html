@@ -40,10 +40,17 @@
 .player-control > span{
     display: inline-block;
     background: #333940;
+    padding: 0px 50px;
+    border-radius: 5px;
+}
+.player-control > span > i{
+    cursor: pointer;
 }
 </style>
 <!--
     TODO: Add tool-tips
+    TODO: Restrict scroll on input fields
+    TODO: Control on player icon
 -->
 <div ng-controller="SynthV2Ctrl" class="syntheziser">
     <div class="project-header text-center">
@@ -51,13 +58,16 @@
             <span>Synthesizer 2.0</span>
             <div class="player-control">
                 <span>
-                    <button class="btn btn-success btn-sm">Play</button>
+                    <i class="fa fa-play-circle" ng-click="play()"></i>
+                    &nbsp;
+                    <!-- <i class="fa fa-pause-circle" ng-click="pause()"></i> -->
+                    <i class="fa fa-stop-circle" ng-click="stop()"></i>
                 </span>
             </div>
         </div>
     </div>
     <div class="audio-channels">
-        <div class="jumbotron channel-row" ng-repeat="channel in channels" style="margin: auto;background-color: #818481;padding: 15px;">
+        <div class="jumbotron channel-row" ng-repeat="channel in currentProject.channels" style="margin: auto;background-color: #818481;padding: 15px;">
             <div>
                 <div>
                     <b>#{{$index + 1}}</b>
@@ -97,7 +107,7 @@
                         <div ng-if="channel.type === 'osc'">
                             <label>Detune</label>
                             <div>
-                                <input class="time-input" type="number" min="0" ng-model="channel.detune" />
+                                <input class="time-input" type="number" ng-model="channel.detune" />
                             </div>
                         </div>
                         <div ng-if="channel.type === 'external'">
@@ -139,13 +149,15 @@
                         <div>
                             <label>Mute</label>
                             <div>
-                                <input type="checkbox" ng-model="channel.mute" />
+                                <span class="badge badge-success" ng-if="channel.mute" ng-click="channel.mute = false;">ON</span>
+                                <span class="badge badge-danger" ng-if="!channel.mute" ng-click="channel.mute = true;">OFF</span>
                             </div>
                         </div>
                         <div>
                             <label>Repeat</label>
                             <div>
-                                <input type="checkbox" ng-model="channel.loop" />
+                                <span class="badge badge-success" ng-if="channel.loop" ng-click="channel.loop = false;">ON</span>
+                                <span class="badge badge-danger" ng-if="!channel.loop" ng-click="channel.loop = true;">OFF</span>
                             </div>
                         </div>
                         <div ng-if="channel.loop">
@@ -175,7 +187,7 @@
                             <span class="badge badge-success" ng-if="channel.gain.enabled" ng-click="channel.gain.enabled = false;">ON</span>
                             <span class="badge badge-danger" ng-if="!channel.gain.enabled" ng-click="channel.gain.enabled = true;">OFF</span>
                         </div>
-                        <div class="col-3">
+                        <div class="col-2">
                             <b><label>Total Time: {{channel.gain.gainDuration}}</label></b>
                         </div>
                         <div class="col-3">
@@ -188,38 +200,38 @@
                             <span class="badge badge-success" ng-if="channel.filter.enabled" ng-click="channel.filter.enabled = false;">ON</span>
                             <span class="badge badge-danger" ng-if="!channel.filter.enabled" ng-click="channel.filter.enabled = true;">OFF</span>
                         </div>
-                        <div class="col-3">
+                        <div class="col-4">
                             <b><label>Effects</label></b>
                             <span class="badge badge-success" ng-if="channel.effects.enabled" ng-click="channel.effects.enabled = false;">ON</span>
                             <span class="badge badge-danger" ng-if="!channel.effects.enabled" ng-click="channel.effects.enabled = true;">OFF</span>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-6">
+                        <div class="col-5">
                             <div class="row inline-options" style="display: inline-block;">
                                 <div>
-                                    <label style="margin-bottom: 0px;">Attack (time)</label>
+                                    <label style="margin-bottom: 0px;">Attack</label>
                                     <div>
                                         {{channel.gain.a}}
                                     </div>
                                     <div class="container" circular-range model="channel.gain.a" min="0" max="2" step="0.01"></div>
                                 </div>
                                 <div>
-                                    <label style="margin-bottom: 0px;">Decay (time)</label>
+                                    <label style="margin-bottom: 0px;">Decay</label>
                                     <div>
                                         {{channel.gain.d}}
                                     </div>
                                     <div class="container" circular-range model="channel.gain.d" min="0" max="2" step="0.01"></div>
                                 </div>
                                 <div>
-                                    <label style="margin-bottom: 0px;">Sustain (vol)</label>
+                                    <label style="margin-bottom: 0px;">Sustain</label>
                                     <div>
                                         {{channel.gain.s}}
                                     </div>
                                     <div class="container" circular-range model="channel.gain.s" min="0" max="1" step="0.01"></div>
                                 </div>
                                 <div>
-                                    <label style="margin-bottom: 0px;">Release (time)</label>
+                                    <label style="margin-bottom: 0px;">Release</label>
                                     <div>
                                         {{channel.gain.r}}
                                     </div>
@@ -230,7 +242,7 @@
                         <div class="col-3">
                             <div class="row inline-options" style="display: inline-block;">
                                 <div>
-                                    <label style="margin-bottom: 0px;">Frequency (range)</label>
+                                    <label style="margin-bottom: 0px;">Frequency</label>
                                     <div>
                                         {{channel.filter.frequencyValue}}
                                     </div>
@@ -238,7 +250,7 @@
                                         max="1" step="0.01"></div>
                                 </div>
                                 <div>
-                                    <label style="margin-bottom: 0px;">Quality (range)</label>
+                                    <label style="margin-bottom: 0px;">Quality</label>
                                     <div>
                                         {{channel.filter.qualityValue}}
                                     </div>
@@ -247,7 +259,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3">
+                        <div class="col-4">
                             <div class="row inline-options" style="display: inline-block;">
                                 <div>
                                     <label style="margin-bottom: 0px;">Bass</label>
@@ -305,7 +317,7 @@
                         <div>
                             <label>Detune</label>
                             <div>
-                                <input class="time-input" type="number" min="0" ng-model="channel.modulation.detune" />
+                                <input class="time-input" type="number" ng-model="channel.modulation.detune" />
                             </div>
                         </div>
                     </div>
@@ -315,8 +327,52 @@
     </div>
 
     <!--Channels ends-->
+    <div class="text-center">
+        <button class="btn btn-app-color" ng-click="addNewChannel()">Add an empty channel</button>
+    </div>
 
     <div>
+        <hr />
+        <div class="row" style="margin: 0px;">
+            <div class="col-6" style="border-right: 1px #e3dddd solid;padding-left: 0px;">
+                <h4>Save your efforts?</h4>
+                <label>Name it: <input type="text" ng-model="currentProject.name" /></label>
+                &nbsp;
+                <button class="btn btn-sm btn-app-color" ng-click="updateProject()">Save or Update</button>
+                <div style="font-size: 12px;">
+                    * If the Project name already exists, it will get updated!
+                </div>
+            </div>
+            <div class="col-6">
+                <h4>Load pre-saved configuration</h4>
+                <select class="" ng-model="selectedProjectName">
+                    <option value="">Pre-saved configuration</option>
+                    <option ng-repeat="proj in savedProjects">{{proj}}</option>
+                </select>
+                &nbsp;
+                <button class="btn btn-sm btn-app-color" ng-click="loadConfiguration(selectedProjectName)">Load
+                    Configuration</button>
+                <div style="font-size: 12px;">
+                    * Will replace the current configuration with the incoming!
+                </div>
+            </div>
+        </div>
 
+        <hr />
+        <h4>Make it a track?<span style="font-size: 12px;"> (Will update the current track with extracted audio)</span></h4>
+        <label>From <input class="time-input" type="number" min="0" ng-model="recording.start" /> sec</label>
+        to
+        <label><input class="time-input" type="number" min="0" ng-model="recording.end" /> sec</label>
+        <div>
+            <button class="btn btn-sm btn-app-color" ng-click="record()" ng-disabled="controlFlags.recording">Play &
+                Extract & Update</button>
+            <span ng-if="controlFlags.recording">&nbsp;
+                Recording Time {{SynthV2Factory.currentContext.currentTime | number: 1}}</span>
+        </div>
+        <div>
+            <br />
+            <h6>Extracted Audio</h6>
+            <audio controls=""></audio>
+        </div>
     </div>
 </div>

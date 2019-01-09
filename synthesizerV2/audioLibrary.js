@@ -1,7 +1,6 @@
 class AudioBaseNode {
     constructor(context) {
         this.context = context;
-        // this.masterVol = masterVol;
     }
 
     /**
@@ -34,6 +33,25 @@ class AudioBaseNode {
 
         this.output.disconnect(destination);
     }
+
+    start(offset = 0, time = 0) {
+        this.output.start(this.context.currentTime + offset + time);
+    }
+
+    stop(offset = 0, time = 0) {
+        this.output.stop(this.context.currentTime + offset + time);
+    }
+
+}
+
+//Master volume for one or more channels
+class MasterVolume {
+    constructor(context, destination) {
+        this.context = context;
+        this.masterVol = new Gain(context);
+        this.input = this.masterVol.input;
+        this.masterVol.connect(destination || this.context.destination, null);
+    }
 }
 
 class AudioConstant extends AudioBaseNode {
@@ -50,7 +68,6 @@ class Gain extends AudioBaseNode {
         super(context);
         this._gainNode = this.input = this.output = this.context.createGain();
         this._param = this._gainNode.gain;
-        // this._param.value = value || 0.00001;
     }
 
     setValueAtTime(value, time = 0) {
@@ -88,6 +105,24 @@ class WaveShaper extends AudioBaseNode {
     }
 }
 
+class Filter extends AudioBaseNode {
+    constructor(context, type = 'lowpass', frequency = 220, quality = 0, gain = 1) {
+        super(context);
+        this._filter = this.input = this.output = this.context.createBiquadFilter();
+        this._filter.type = type;
+        this._filter.gain.value = gain;
+        this.setup(frequency, quality);
+    }
+
+    setup(frequency, quality) {
+        const QUAL_MUL = 30;
+        // Frequency
+        this._filter.frequency.value = frequency;
+        // Gain
+        this._filter.Q.value = quality * QUAL_MUL;
+    }
+}
+
 class Oscillator extends AudioBaseNode {
     constructor(context, type, frequency, detune, frequencyDelay) {
         super(context);
@@ -101,7 +136,7 @@ class Oscillator extends AudioBaseNode {
 
         if (frequencyDelay && frequencyDelay > 0) {
             this.frequency.value = 0.00001;
-            this.frequency.exponentialRampToValueAtTime(options.frequency, frequencyDelay);
+            this.frequency.exponentialRampToValueAtTime(options.frequency, this.context.currentTime + frequencyDelay);
         } else {
             this.frequency.value = options.frequency;
         }
@@ -114,48 +149,39 @@ class Oscillator extends AudioBaseNode {
             detune: 0
         }
     }
-
-    start(time = 0) {
-        this._oscNode.start(this.context.currentTime + time);
-    }
-
-    stop(time = 0) {
-        this._oscNode.stop(this.context.currentTime + time);
-    }
 }
 
-//Master volume for one or more channels
-class MasterVolume {
-    constructor(context, destination) {
-        this.context = context;
-        this.masterVol = new Gain(context);
-        this.input = this.masterVol.input;
-        this.masterVol.connect(destination || this.context.destination, null);
+class BufferPlayer extends AudioBaseNode {
+    constructor(context, buffer) {
+        super(context);
+        this._bufferSource = this.output = this.context.createBufferSource();
+        this._bufferSource.buffer = buffer;
     }
 }
 
 class ModulatingOscillator extends AudioBaseNode {
-    constructor(context, { type, frequency, detune, frequencyRatio, modulationType }) {
+    constructor(context, modulationType, frequency, detune) {
         super(context);
 
-        this._mainOsc = new Oscillator(context, type, frequency, detune);
-        this._modulationOsc = new Oscillator(context, modulationType, frequency * frequencyRatio, detune, 0.05);
+        // this._mainOsc = new Oscillator(context, type, frequency, detune);
+        this._modulationOsc = new Oscillator(context, modulationType, frequency, detune, 0.05);
         this._mainGain = new Gain(context);
 
         // Add a slight distortion
         this._waveShaper = new WaveShaper(context, 10);
         this._modulationOsc.connect(this._waveShaper);
         this._waveShaper.connect(this._mainGain, 'param');
+        this.input = this.output = this._mainGain.output;
 
-        this._mainOsc.connect(this._mainGain);
+        // this._mainOsc.connect(this._mainGain);
 
-        this.output = this._mainGain.output;
+        // this.output = this._mainGain.output;
     }
 
-    start() {
-        this._mainOsc.start();
-        this._modulationOsc.start();
-    }
+    // start() {
+    //     this._mainOsc.start();
+    //     this._modulationOsc.start();
+    // }
 }
 
 class ADSREnv extends Gain {
@@ -169,15 +195,15 @@ class ADSREnv extends Gain {
         const { a = 0, d = 0, s = 0, r = 0 } = this.gainADSR;
         this.setValueAtTime(0.00001, 0);
         if (a && a > 0) {
-            this.rampValueAtTime(1, a);
+            this.rampValueAtTime(1, (this.context.currentTime + a));
         }
 
         if (d && d > 0 && s && s > 0) {
-            this.rampValueAtTime(s, (a + d));
+            this.rampValueAtTime(s, (this.context.currentTime + a + d));
         }
 
         if (r && r > 0) {
-            this.rampValueAtTime(0.00001, (a + d + r));
+            this.rampValueAtTime(0.00001, (this.context.currentTime + a + d + r));
         }
     }
 }
