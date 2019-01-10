@@ -44,16 +44,6 @@ class AudioBaseNode {
 
 }
 
-//Master volume for one or more channels
-class MasterVolume {
-    constructor(context, destination) {
-        this.context = context;
-        this.masterVol = new Gain(context);
-        this.input = this.masterVol.input;
-        this.masterVol.connect(destination || this.context.destination, null);
-    }
-}
-
 class AudioConstant extends AudioBaseNode {
     constructor(context) {
         super(context);
@@ -64,7 +54,7 @@ class AudioConstant extends AudioBaseNode {
 }
 
 class Gain extends AudioBaseNode {
-    constructor(context, value) {
+    constructor(context) {
         super(context);
         this._gainNode = this.input = this.output = this.context.createGain();
         this._param = this._gainNode.gain;
@@ -163,7 +153,6 @@ class ModulatingOscillator extends AudioBaseNode {
     constructor(context, modulationType, frequency, detune) {
         super(context);
 
-        // this._mainOsc = new Oscillator(context, type, frequency, detune);
         this._modulationOsc = new Oscillator(context, modulationType, frequency, detune, 0.05);
         this._mainGain = new Gain(context);
 
@@ -172,16 +161,11 @@ class ModulatingOscillator extends AudioBaseNode {
         this._modulationOsc.connect(this._waveShaper);
         this._waveShaper.connect(this._mainGain, 'param');
         this.input = this.output = this._mainGain.output;
-
-        // this._mainOsc.connect(this._mainGain);
-
-        // this.output = this._mainGain.output;
     }
 
-    // start() {
-    //     this._mainOsc.start();
-    //     this._modulationOsc.start();
-    // }
+    getOsc() {
+        return this._modulationOsc;
+    }
 }
 
 class ADSREnv extends Gain {
@@ -208,34 +192,14 @@ class ADSREnv extends Gain {
     }
 }
 
-// Players
-
-
-
-// Testing Platform
-
-function playSound() {
-    // alert(1);
-    // return;
-    const context = new AudioContext();
-    const masterVol = new MasterVolume(context);
-    const modOsc = new ModulatingOscillator(context, {
-        type: 'triangle',
-        frequency: 293.66,
-        detune: 0,
-        frequencyRatio: 0.5,
-        modulationType: 'sine'
-    });
-
-    const env = new ADSREnv(context, {
-        a: 0.05,
-        d: 0.2,
-        s: 0.2,
-        r: 1.5
-    });
-
-    modOsc.connect(env);
-    env.connect(masterVol);
-
-    modOsc.start();
+//Master volume for one or more channels
+/**
+ * Mainly a Gain only with only difference is that it connects with the destination provided.
+ */
+class MasterVolume extends Gain {
+    constructor(context, value = 1, destination) {
+        super(context);
+        this.setValueAtTime(value, this.context.currentTime);
+        this.connect(destination || this.context.destination, null);
+    }
 }

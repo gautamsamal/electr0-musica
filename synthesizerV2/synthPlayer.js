@@ -2,9 +2,9 @@ class GainADSR {
     constructor() {
         this.enabled = true;
         this.a = 0.05;
-        this.d = 0.05;
-        this.s = 1;
-        this.r = 0.1;
+        this.d = 0.2;
+        this.s = 0.2;
+        this.r = 1.5;
     }
 
     static parseJSON(json) {
@@ -269,10 +269,12 @@ class AudioChannel {
         const modulationOsc = new ModulatingOscillator(context, this.modulation.wave, this.modulation.frequency, this.modulation.detune);
         this.output.connect(modulationOsc);
         this.output = modulationOsc;
+        // Store modulation oscillator
+        this.modulationOsc = modulationOsc.getOsc();
     }
 
     _connectAllDots(context) {
-        const masterVol = new MasterVolume(context);
+        const masterVol = new MasterVolume(context, this.masterVolume, this.destination);
         // Connect Modulator
         this._connectModulator(context);
         // Connect effects
@@ -283,6 +285,16 @@ class AudioChannel {
         this._connectADSR(context);
 
         this.output.connect(masterVol);
+    }
+
+    _playModulatingOsc(context) {
+        if (!this.modulationOsc) {
+            return;
+        }
+        const { offSet, duration } = this.fixDurationAndDelay();
+        // Start the oscillator
+        this.modulationOsc.start(offSet);
+        this.modulationOsc.stop(offSet, duration);
     }
 
     /**
@@ -311,6 +323,7 @@ class AudioChannel {
         // Start the oscillator
         osc.start(offSet);
         osc.stop(offSet, duration);
+        this._playModulatingOsc();
     };
 
     /**
@@ -321,7 +334,7 @@ class AudioChannel {
         // Noise
         console.log('Noise config', this);
         const buffer = this._getNoiseBuffer(context, this.duration);
-        this._playExternalChannel(context, buffer)
+        this._playExternalChannel(context, buffer);
     };
 
     _playExternalChannel(context, buffer) {
@@ -348,6 +361,7 @@ class AudioChannel {
         // Start the oscillator
         buffPlayer.start(offSet);
         buffPlayer.stop(offSet, duration);
+        this._playModulatingOsc();
     };
 }
 

@@ -1,7 +1,61 @@
 <html>
 
 <head>
-    <script src="./synthV2.js"></script>
+    <script src="./audioLibrary.js"></script>
+    <script>
+        class ModulatingOscillator1 extends AudioBaseNode {
+            constructor(context, { type, modulationType, frequency, detune }) {
+                super(context);
+
+                this._mainOsc = new Oscillator(context, type, frequency, detune);
+                this._modulationOsc = new Oscillator(context, modulationType, frequency * 0.5, detune, 0.05);
+                this._mainGain = new Gain(context);
+
+                // Add a slight distortion
+                this._waveShaper = new WaveShaper(context, 10);
+                this._modulationOsc.connect(this._waveShaper);
+                this._waveShaper.connect(this._mainGain, 'param');
+                this.input = this.output = this._mainGain.output;
+
+                this._mainOsc.connect(this._mainGain);
+
+                // this.output = this._mainGain.output;
+            }
+
+            start() {
+                this._mainOsc.start();
+                this._modulationOsc.start();
+            }
+        }
+
+        // Testing Modulation
+
+        function playSound() {
+            // alert(1);
+            // return;
+            const context = new AudioContext();
+            const masterVol = new MasterVolume(context);
+            const modOsc = new ModulatingOscillator1(context, {
+                type: 'triangle',
+                frequency: 293.66,
+                detune: 0,
+                frequencyRatio: 0.5,
+                modulationType: 'sine'
+            });
+
+            const env = new ADSREnv(context, {
+                a: 0.05,
+                d: 0.2,
+                s: 0.2,
+                r: 1.5
+            });
+
+            modOsc.connect(env);
+            env.connect(masterVol);
+
+            modOsc.start();
+        }
+    </script>
 </head>
 
 <body>
