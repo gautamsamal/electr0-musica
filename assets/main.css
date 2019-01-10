@@ -218,14 +218,14 @@ body {
     position: relative;
 }
 
-.track-loader {
+/* .track-loader {
     position: absolute;
     top: 0px;
     left: 0px;
     background: #fff;
     width: 100%;
     padding: 0px 10px;
-}
+} */
 
 .timer-liner {
     position: absolute;
@@ -238,12 +238,38 @@ body {
 
 .project-header {
     background-color: #343a40;
-    border-radius: 8px;
     color: white;
-    margin-top: 20px;
-    margin-bottom: 10px;
     font-size: 26px;
     padding: 4px;
+    position: fixed;
+    z-index: 100;
+    width: 100%;
+    top: 0px;
+    left: 0px;
+    margin: 0px;
+    border-radius: 0px;
+}
+
+.player-control {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+}
+
+.player-control>span {
+    display: inline-block;
+    background: #333940;
+    padding: 0px 50px;
+    border-radius: 5px;
+}
+
+.player-control>span>i {
+    cursor: pointer;
+    color: #a7a4a4;
+}
+
+.player-control>span>i.active {
+    color: #fff;
 }
 
 /*

@@ -16,22 +16,51 @@
 
     #btn-save {
         position: absolute;
-        top: 28px;
+        top: 5px;
         right: 18px;
     }
 
     #btn-load {
         border-radius: 0 5px 5px 0
     }
+
+    .channel-container {
+        margin-top: 60px !important;
+    }
+    .scale-bar{
+        position: absolute;
+        right: 10px;
+        top: 10px;
+    }
 </style>
+<!--
+    TODO: Make the play controls work
+    TODO: Dynamic width calculation + on drag recalculate
+    TODO: Auto save events
+-->
 
 <div id="editor" ng-controller="MainLineCtrl">
     <div class="project-header text-center">
-        {{currentProject.projectName}} - Main Line
-        <span class="project-state" ng-class="controlFlags.ready ? 'ready' : 'not-ready'" title="{{ controlFlags.ready ? 'Ready' : 'Not Ready'}}">&nbsp;&nbsp;&nbsp;&nbsp;</span>
-        <button id="btn-save" class="btn btn-sm btn-success" ng-click="retrySaving()">Save</button>
+        <div style="position: relative;">
+            <span>{{currentProject.projectName}} - Main Line</span>
+            <span class="project-state" ng-class="controlFlags.ready ? 'ready' : 'not-ready'" title="{{ controlFlags.ready ? 'Ready' : 'Not Ready'}}">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            <button id="btn-save" class="btn btn-sm btn-success" ng-click="retrySaving()">Save</button>
+            <div class="player-control">
+                <span>
+                    <i class="fa fa-play-circle" title="Play" ng-click="play()"></i>
+                    &nbsp;
+                    <!-- <i class="fa fa-pause-circle" ng-click="pause()"></i> -->
+                    <i class="fa fa-stop-circle" title="Stop" ng-click="stop()"></i>
+                </span>
+            </div>
+        </div>
     </div>
-    <div class="jumbotron" style="margin: auto;background-color: #818481;">
+    <div class="jumbotron channel-container" style="margin: auto;background-color: #818481;position: relative;">
+        <div class="scale-bar">
+            <i class="fa fa-arrows-h" style="color: #fff;font-size: 26px;" title="scale tracks"></i>&nbsp;
+            <input type="range" min="2" max="10" step="1" ng-model="configuration.scale" ng-model-options="{ updateOn: 'default blur', debounce: {'default': 1000, 'blur': 0} }"
+                ng-change="updateScale()" style="cursor: pointer" />
+        </div>
         <div id="editor-panel">
             <div class="tracks">
                 <div>
@@ -53,7 +82,7 @@
     </div>
     <hr />
     <div>
-        <h4>Load a track from library</h4>
+        <h5>Load a track from library</h5>
         <div class="input-group col-5" style="padding: 0px;">
             <select class="form-control" ng-model="selectedTrack">
                 <option value="">-Select-</option>
@@ -63,23 +92,19 @@
         </div>
         <div class="col-12" style="font-size: 12px;">
             <span>Need a new track or better, synthesize one?
-                <a class="text-info" ng-click="openSynthesizer();" style="font-size: 13px;cursor: pointer;">Go to
+                <a class="text-info" ui-sref="synthesizer" style="font-size: 13px;cursor: pointer;">Go to
                     synthesizer</a>
             </span>
         </div>
-    </div>
-    <div class="track-loader" ng-if="controlFlags.trackLoader" style="z-index: 2000;">
-        <div style="position: relative;">
-            <div style="position: absolute; top:0px;z-index: 1;">
-                <a style="font-weight: 600;cursor: pointer;" class="text-primary" ng-click="closeSynthesizer()">&lt; Go
-                    back to tracks</a>
-            </div>
-            <div ng-include="'synthesizer/main.html'"></div>
+        <h5>Or upload an audio file</h5>
+        <div>
+            <div class="btn btn-app-color" ngf-select="parseFile($file);" ng-model="file" name="file" ngf-pattern="'audio/*'"
+                ngf-accept="'audio/*'" ngf-max-size="10MB">Upload</div>
         </div>
     </div>
     <hr />
-    <div>
+    <!-- <div>
         JSON configuration
         <pre>{{configuration | json}}</pre>
-    </div>
+    </div> -->
 </div>

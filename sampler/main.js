@@ -1,9 +1,9 @@
 angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http, $state, $compile, $timeout, MainLinePlayer) => {
 
-    const secLength = 80;
+    let secLength = 80;
     const maxHeight = 60;
     const minHeight = 10;
-    const minimizedSecLength = secLength / 8;
+    let minimizedSecLength = secLength / 8;
     let trackIds = 0;
 
     $scope.controlFlags = {
@@ -14,8 +14,14 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
 
     $scope.currentProject = {};
     $scope.configuration = {
+        scale: 5,
         tracks: []
     };
+
+    function _updateSecLength() {
+        secLength = 16 * $scope.configuration.scale;
+        minimizedSecLength = secLength / 8;
+    }
 
     function _fetchCurrentProject(callback) {
         const projectName = window.localStorage.getItem('currentProject');
@@ -33,6 +39,10 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
             $scope.currentProject.projectName = projectName;
             $scope.currentProject.configuration = response.data || {};
             $scope.configuration = $scope.currentProject.configuration;
+            if (!$scope.configuration.scale) {
+                $scope.configuration.scale = 5;
+            }
+            _updateSecLength();
             if (!$scope.configuration.tracks) {
                 $scope.configuration.tracks = [];
             }
@@ -56,9 +66,22 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
 
         const promiseArr = [];
         $scope.configuration.tracks.forEach(track => {
-            if (!track.synthName) {
-                // Not a synthesizer
+            if (!track.synthName && !track.base64Src) {
+                // Not a synthesizer nor a upload
                 track.loaded = true;
+                return;
+            }
+            if (!track.synthName && track.base64Src) {
+                promiseArr.push(new Promise((resolve, reject) => {
+                    Utils.base64ToAudioBuffer(track.base64Src, function (err, buffer) {
+                        if (err) {
+                            return reject(err);
+                        }
+                        track.loaded = true;
+                        track.audioBuffer = buffer;
+                        resolve();
+                    });
+                }));
                 return;
             }
             promiseArr.push(_loadSelectedTrack(track.synthName).then(({ trackInfo, buffer }) => {
@@ -139,7 +162,7 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
 
     $scope.removeTrack = function (index) {
         if ($scope.configuration.tracks && $scope.configuration.tracks[index]) {
-            $scope.configuration.tracks.splice('index', 1);
+            $scope.configuration.tracks.splice(index, 1);
             trackIds = 0;
             $('.track').remove();
             $('.track-timing').remove();
@@ -147,8 +170,18 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         }
     };
 
+    $scope.updateScale = function () {
+        _updateSecLength();
+        trackIds = 0;
+        $('.track').remove();
+        $('.track-timing').remove();
+        fillTimeLines();
+        fillConfiguration();
+    };
+
     const fillTimeLines = function () {
-        const maxTime = 20 || 0;
+        const maxTime = 50 || 0;
+        $('#editor-panel .scale').html('');
         const panelWidth = $('#editor-panel .scale').width() - 100;
         const secPanels = Math.max(parseInt(panelWidth / secLength), parseInt(maxTime));
 
@@ -271,6 +304,8 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
             seg.left = $(elem)[0].offsetLeft;
             seg.width = $(elem).outerWidth();
         });
+
+        console.log('Track added');
     }
 
     function getMaximumTime(trackId = null) {
@@ -384,7 +419,7 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
      * Context menu to add or remove track segments
      */
     function updateContextMenu() {
-        $.contextMenu('update');
+        // $.contextMenu('update');
 
         $.contextMenu({
             selector: '.tracker',
@@ -459,7 +494,41 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         }).catch(err => {
             alert('Can not load saved project. Check console for errors!');
         });
-    }
+    };
+
+    $scope.parseFile = function (file) {
+        $scope.controlFlags.ready = false;
+        Utils.convertFileToArrayBuffer(file, function (arrayBuffer) {
+            const base64Src = Utils.arrayBufferToBase64(arrayBuffer);
+            Utils.base64ToAudioBuffer(base64Src, function (err, audioBuffer) {
+                if (err) {
+                    alert('Unable to parse audio file');
+                    $scope.controlFlags.ready = true;
+                    return;
+                }
+                const track = {
+                    name: file.name,
+                    base64Src: base64Src,
+                    audioBuffer: audioBuffer,
+                    duration: audioBuffer.duration,
+                    loaded: true,
+                    segments: [{
+                        start: 0,
+                        end: audioBuffer.duration,
+                        offset: 0
+                    }]
+                };
+
+                $scope.configuration.tracks.push(track);
+                _addTrack(track, $scope.configuration.tracks.length - 1);
+                _addTrackElems(track);
+                console.log(track);
+                alert('Track is added.');
+                $scope.controlFlags.ready = true;
+                _digest();
+            });
+        });
+    };
 
     function _loadSelectedTrack(syntProjectName) {
         return new Promise((resolve, reject) => {
