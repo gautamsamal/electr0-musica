@@ -150,10 +150,11 @@ class BufferPlayer extends AudioBaseNode {
 }
 
 class ModulatingOscillator extends AudioBaseNode {
-    constructor(context, modulationType, frequency, detune) {
+    constructor(context, modulationType, frequency, detune, frequencyDelay) {
         super(context);
 
-        this._modulationOsc = new Oscillator(context, modulationType, frequency, detune, 0.05);
+        // Same Oscillator with a frequency delay
+        this._modulationOsc = new Oscillator(context, modulationType, frequency, detune, frequencyDelay);
         this._mainGain = new Gain(context);
 
         // Add a slight distortion
@@ -169,25 +170,26 @@ class ModulatingOscillator extends AudioBaseNode {
 }
 
 class ADSREnv extends Gain {
-    constructor(context, gainADSR) {
+    constructor(context, gainADSR, offset = 0) {
         super(context);
         this.gainADSR = gainADSR;
+        this.offset = offset;
         this.setup();
     }
 
     setup() {
         const { a = 0, d = 0, s = 0, r = 0 } = this.gainADSR;
-        this.setValueAtTime(0.00001, 0);
+        this.setValueAtTime(0.00001, this.context.currentTime + this.offset);
         if (a && a > 0) {
-            this.rampValueAtTime(1, (this.context.currentTime + a));
+            this.rampValueAtTime(1, (this.context.currentTime + this.offset + a));
         }
 
         if (d && d > 0 && s && s > 0) {
-            this.rampValueAtTime(s, (this.context.currentTime + a + d));
+            this.rampValueAtTime(s, (this.context.currentTime + this.offset + a + d));
         }
 
         if (r && r > 0) {
-            this.rampValueAtTime(0.00001, (this.context.currentTime + a + d + r));
+            this.rampValueAtTime(0.00001, (this.context.currentTime + this.offset + a + d + r));
         }
     }
 }

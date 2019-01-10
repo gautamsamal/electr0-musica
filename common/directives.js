@@ -1,3 +1,16 @@
+angular.module('mainApp').directive('restrictScroll', [function () {
+    return {
+        restrict: 'A',
+        link: function (scope, elem, attrs) {
+            // disable mousewheel on a input number field when in focus
+            // (to prevent Cromium browsers change the value when scrolling)
+            $(elem).on("wheel", function (e) {
+                $(this).blur();
+            });
+        }
+    }
+}]);
+
 angular.module('mainApp').directive('circularRange', [function () {
     return {
         restrict: 'A',

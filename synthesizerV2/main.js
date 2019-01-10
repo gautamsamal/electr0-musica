@@ -45,10 +45,6 @@ angular.module('mainApp').controller('SynthV2Ctrl', ($rootScope, $scope, $http, 
         SynthV2Factory.playChannels($scope.currentProject.channels, $scope.recording);
     };
 
-    $scope.$on('$destroy', () => {
-        SynthV2Factory.stop();
-    });
-
     // Update on record time
     $scope.$on('Record:Timer:Update', () => {
         $scope.$digest();
@@ -181,6 +177,35 @@ angular.module('mainApp').controller('SynthV2Ctrl', ($rootScope, $scope, $http, 
     function _upadateTheAudioPlayback(base64Src) {
         document.querySelector("audio").src = `data:audio/ogg;base64,${base64Src}`;
     }
+
+    // Register event handler
+    function _playOnSpcaeBar(e) {
+        // Do nothing for text box
+        const element = $(e.target);
+        if (element.is("input[type=text]")) {
+            return;
+        }
+        if (e.key === ' ' || e.key === 'Spacebar') {
+            if ($scope.SynthV2Factory.currentContext && $scope.SynthV2Factory.currentContext.state === 'running') {
+                console.log('Stopping with key-press');
+                $scope.stop();
+            } else {
+                console.log('Playing with key-press');
+                $scope.play();
+            }
+            e.preventDefault();
+        }
+    }
+    $(window).on('keypress', _playOnSpcaeBar);
+
+    $scope.$on('Player:Event', (e, eventType) => {
+        $scope.$digest();
+    });
+
+    $scope.$on('$destroy', () => {
+        SynthV2Factory.stop();
+        $(window).off('keypress', _playOnSpcaeBar);
+    });
 
     $scope.addNewChannel();
     _loadSavedConfigs();

@@ -69,7 +69,10 @@ class AudioChannel {
         let startAfter = isNaN(this.startAfter) ? 0 : parseFloat(this.startAfter);
         let duration = this.duration ? parseFloat(parseFloat(this.duration).toFixed(2)) : null;
 
-        offSet += startAfter;
+        //for first loop we need starts after.
+        if (!this.loopCount) {
+            offSet += startAfter;
+        }
         return { offSet, duration };
     }
 
@@ -197,7 +200,8 @@ class AudioChannel {
 
         console.log('ADSR Connected');
 
-        const adsrEnv = new ADSREnv(context, this.gain);
+        const { offSet } = this.fixDurationAndDelay();
+        const adsrEnv = new ADSREnv(context, this.gain, offSet);
         this.output.connect(adsrEnv);
         this.output = adsrEnv;
     }
@@ -266,7 +270,9 @@ class AudioChannel {
 
         console.log('Mosulator Connected');
 
-        const modulationOsc = new ModulatingOscillator(context, this.modulation.wave, this.modulation.frequency, this.modulation.detune);
+        const { offSet } = this.fixDurationAndDelay();
+        // With a frequency delay of 0.05
+        const modulationOsc = new ModulatingOscillator(context, this.modulation.wave, this.modulation.frequency, this.modulation.detune, (offSet + 0.05));
         this.output.connect(modulationOsc);
         this.output = modulationOsc;
         // Store modulation oscillator
@@ -305,11 +311,7 @@ class AudioChannel {
         // Oscillator
         console.log('OSC config', this);
         const { offSet, duration } = this.fixDurationAndDelay();
-        // For loop count
-        if (!this.loopCount) {
-            this.loopCount = 0;
-        }
-        this.loopCount++;
+        console.log(offSet, duration);
 
         const osc = new Oscillator(context, this.wave, this.frequency, this.detune, this.frequencyDelay);
         if (this.output) {
@@ -324,6 +326,12 @@ class AudioChannel {
         osc.start(offSet);
         osc.stop(offSet, duration);
         this._playModulatingOsc();
+
+        // For loop count
+        if (!this.loopCount) {
+            this.loopCount = 0;
+        }
+        this.loopCount++;
     };
 
     /**
@@ -341,11 +349,6 @@ class AudioChannel {
         // Noise
         console.log('Buffer config', this);
         const { offSet, duration } = this.fixDurationAndDelay();
-        // For loop count
-        if (!this.loopCount) {
-            this.loopCount = 0;
-        }
-        this.loopCount++;
 
         const buffPlayer = new BufferPlayer(context, buffer || this.buffer);
 
@@ -362,12 +365,19 @@ class AudioChannel {
         buffPlayer.start(offSet);
         buffPlayer.stop(offSet, duration);
         this._playModulatingOsc();
+
+        // For loop count
+        if (!this.loopCount) {
+            this.loopCount = 0;
+        }
+        this.loopCount++;
     };
 }
 
 angular.module('mainApp').factory('SynthV2Factory', ($rootScope) => {
     const service = {
-        currentContext: null
+        currentContext: null,
+        playduration: null
     };
 
     let timerWorkers = [];
@@ -381,6 +391,8 @@ angular.module('mainApp').factory('SynthV2Factory', ($rootScope) => {
         // Stop all players first
         service.stop();
         const channelInstances = [];
+        _broadcastPlayerEvent('START');
+
         promiseArray = channels.map(channel => {
             const parsedChannel = AudioChannel.parseJSON(channel);
             channelInstances.push(parsedChannel);
@@ -399,10 +411,17 @@ angular.module('mainApp').factory('SynthV2Factory', ($rootScope) => {
                     return;
                 }
                 const channelInstance = channel.configure(context, destination);
+                _calculateDuration(channelInstance);
                 if (channelInstance.timerWorker) {
                     timerWorkers.push(channelInstance.timerWorker);
                 }
             });
+
+            // Auto stop context
+            console.log('Will auto stop at ', service.playduration);
+            if (service.playduration !== null && service.playduration !== -1) {
+                _scheduleAutoStop(context);
+            }
         }).catch(err => {
             console.log(err);
             alert('Error while processing channels');
@@ -413,15 +432,22 @@ angular.module('mainApp').factory('SynthV2Factory', ($rootScope) => {
         if (!service.currentContext)
             return;
         service.currentContext.suspend();
+        _broadcastPlayerEvent('PAUSE');
     };
 
     service.resume = function () {
         if (!service.currentContext)
             return;
         service.currentContext.resume();
+        _broadcastPlayerEvent('RESUME');
     };
 
     service.stop = function () {
+        service.playduration = null;
+        if (service.autoStopTimer) {
+            clearTimeout(service.autoStopTimer);
+            service.autoStopTimer = null;
+        }
         if (!service.currentContext)
             return;
         service.currentContext.close();
@@ -430,7 +456,54 @@ angular.module('mainApp').factory('SynthV2Factory', ($rootScope) => {
             w.postMessage('stop');
         });
         timerWorkers = [];
+        _broadcastPlayerEvent('STOP');
     };
+
+    function _broadcastPlayerEvent(...values) {
+        setTimeout(function () {
+            $rootScope.$broadcast('Player:Event', ...values);
+        }, 0);
+    }
+
+    function _calculateDuration(channel) {
+        // it's a infinite loop
+        if (service.playduration === -1) {
+            return;
+        }
+        let playduration = service.playduration || 0;
+        if (!channel.loop) {
+            service.playduration = Math.max(service.playduration, parseFloat(channel.totalDuration + channel.startAfter || 0));
+            return;
+        }
+        if (!(channel.limitRepeatCount && channel.limitRepeatCount > 0)
+            && !(channel.limitRepeatSec && channel.limitRepeatSec > 0)) {
+            // Loop without an end
+            service.playduration = -1;
+            return;
+        }
+        if (channel.limitRepeatCount && channel.limitRepeatCount > 0) {
+            service.playduration =
+                Math.max(service.playduration, parseFloat((channel.totalDuration * channel.limitRepeatCount) + channel.startAfter || 0));
+        }
+
+        if (channel.limitRepeatSec && channel.limitRepeatSec > 0) {
+            service.playduration =
+                Math.max(service.playduration, parseFloat(channel.limitRepeatSec + channel.startAfter || 0));
+        }
+
+    }
+
+    function _scheduleAutoStop(context) {
+        const timeWorker = Utils.setUpScheduler(() => {
+            if (context.currentTime > service.playduration) {
+                console.log('Auto-Stopping at ', context.currentTime);
+                // Stop player
+                service.stop();
+            }
+        });
+        timeWorker.postMessage("start");
+        timerWorkers.push(timeWorker);
+    }
 
     function _setUpRecorder(context, recordTime) {
         let destination;

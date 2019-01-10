@@ -45,12 +45,14 @@
 }
 .player-control > span > i{
     cursor: pointer;
+    color: #a7a4a4;
+}
+.player-control > span > i.active{
+    color: #fff;
 }
 </style>
 <!--
     TODO: Add tool-tips
-    TODO: Restrict scroll on input fields
-    TODO: Control on player icon
 -->
 <div ng-controller="SynthV2Ctrl" class="syntheziser">
     <div class="project-header text-center">
@@ -58,10 +60,12 @@
             <span>Synthesizer 2.0</span>
             <div class="player-control">
                 <span>
-                    <i class="fa fa-play-circle" ng-click="play()"></i>
+                    <i class="fa fa-play-circle" title="Play" ng-class="{'active': SynthV2Factory.currentContext.state === 'running'}"
+                        ng-click="play()"></i>
                     &nbsp;
                     <!-- <i class="fa fa-pause-circle" ng-click="pause()"></i> -->
-                    <i class="fa fa-stop-circle" ng-click="stop()"></i>
+                    <i class="fa fa-stop-circle" title="Stop" ng-class="{'active': !SynthV2Factory.currentContext || SynthV2Factory.currentContext.state !== 'running'}"
+                        ng-click="stop()"></i>
                 </span>
             </div>
         </div>
@@ -101,13 +105,13 @@
                         <div ng-if="channel.type === 'osc'">
                             <label>Frequency</label>
                             <div>
-                                <input class="time-input" type="number" min="0" ng-model="channel.frequency" />
+                                <input class="time-input" restrict-scroll type="number" min="0" ng-model="channel.frequency" />
                             </div>
                         </div>
                         <div ng-if="channel.type === 'osc'">
                             <label>Detune</label>
                             <div>
-                                <input class="time-input" type="number" ng-model="channel.detune" />
+                                <input class="time-input" restrict-scroll type="number" ng-model="channel.detune" />
                             </div>
                         </div>
                         <div ng-if="channel.type === 'external'">
@@ -131,19 +135,19 @@
                         <div>
                             <label>Delay</label>
                             <div>
-                                <input class="time-input" type="number" min="0" ng-model="channel.delay" />
+                                <input class="time-input" restrict-scroll type="number" min="0" ng-model="channel.delay" />
                             </div>
                         </div>
                         <div>
                             <label>Starts After</label>
                             <div>
-                                <input class="time-input" type="number" min="0" ng-model="channel.startAfter" />
+                                <input class="time-input" restrict-scroll type="number" min="0" ng-model="channel.startAfter" />
                             </div>
                         </div>
                         <div>
                             <label>Duration</label>
                             <div>
-                                <input class="time-input" type="number" min="0" ng-model="channel.duration" />
+                                <input class="time-input" restrict-scroll type="number" min="0" ng-model="channel.duration" />
                             </div>
                         </div>
                         <div>
@@ -163,10 +167,10 @@
                         <div ng-if="channel.loop">
                             <label>Repeat till</label>
                             <div>
-                                <input class="time-input" type="number" min="0" ng-model="channel.limitRepeatSec" />
+                                <input class="time-input" restrict-scroll type="number" min="0" ng-model="channel.limitRepeatSec" />
                                 sec(s)
                                 &nbsp;or after&nbsp;
-                                <input class="time-input" type="number" min="0" ng-model="channel.limitRepeatCount" />
+                                <input class="time-input" restrict-scroll type="number" min="0" ng-model="channel.limitRepeatCount" />
                                 times
                             </div>
                         </div>
@@ -311,13 +315,13 @@
                         <div>
                             <label>Frequency</label>
                             <div>
-                                <input class="time-input" type="number" min="0" ng-model="channel.modulation.frequency" />
+                                <input class="time-input" restrict-scroll type="number" min="0" ng-model="channel.modulation.frequency" />
                             </div>
                         </div>
                         <div>
                             <label>Detune</label>
                             <div>
-                                <input class="time-input" type="number" ng-model="channel.modulation.detune" />
+                                <input class="time-input" restrict-scroll type="number" ng-model="channel.modulation.detune" />
                             </div>
                         </div>
                     </div>
@@ -360,9 +364,9 @@
 
         <hr />
         <h4>Make it a track?<span style="font-size: 12px;"> (Will update the current track with extracted audio)</span></h4>
-        <label>From <input class="time-input" type="number" min="0" ng-model="recording.start" /> sec</label>
+        <label>From <input class="time-input" restrict-scroll type="number" min="0" ng-model="recording.start" /> sec</label>
         to
-        <label><input class="time-input" type="number" min="0" ng-model="recording.end" /> sec</label>
+        <label><input class="time-input" restrict-scroll type="number" min="0" ng-model="recording.end" /> sec</label>
         <div>
             <button class="btn btn-sm btn-app-color" ng-click="record()" ng-disabled="controlFlags.recording">Play &
                 Extract & Update</button>
