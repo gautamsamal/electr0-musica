@@ -596,6 +596,18 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
     function _digest() {
         $scope.$digest();
     }
+    
+    $scope.startAnim = function() {
+        startAnim();
+        window.showThreeContainer = function(){
+            $scope.showAnim = true;  
+        }
+        window.toggleScene = () => {
+          $scope.showVisualization = true;
+          $scope.showAnim = false;
+          setupVS();
+        }
+    }
 
     _fetchCurrentProject(function () {
         fillTimeLines();

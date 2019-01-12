@@ -74,6 +74,18 @@
             </div>
         </div>
     </div>
+
+    <!-- animation -->
+    <div class="row col-12 text-center" style="position:relative">
+        <div ng-style="{'display': showAnim ? 'block' : none }" id="three-container"></div>
+        <div class="row col-12 text-center" style="text-align: center" ng-style="{'display': showVisualization ? 'block' : none }" id="anim">
+            <button onclick="toggleMoveCamera()">Toggle move camera</button>
+            <audio id="sound"></audio>
+            <input ng-init="startAnim()" type="file" id="audioInput" />
+        </div>
+    </div>
+
+
     <div class="text-center" style="margin-top:10px;">
         <button class="btn btn-success" ng-click="play()">Play</button>
         <button class="btn btn-success" ng-click="pause()">Pause</button>
