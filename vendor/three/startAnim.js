@@ -6,7 +6,6 @@ THREE.ShapeUtils.triangulateShape = (function () {
 	};
 })();
 
-window.onload = init;
 
 var settings = {
 	letterTimeOffset: 0.075
@@ -736,4 +735,5 @@ function createTweenScrubber(tween, seekSpeed) {
 	}
 	var _cx = 210;
 }
+init();
 }

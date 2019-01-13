@@ -52,7 +52,7 @@ let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHei
 
 let renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
-renderer.setSize(300, 300);
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.gammaInput = true;
 renderer.gammaOutput = true;
 document.getElementById('anim').appendChild(renderer.domElement);

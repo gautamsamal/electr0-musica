@@ -51,11 +51,13 @@
                     &nbsp;
                     <!-- <i class="fa fa-pause-circle" ng-click="pause()"></i> -->
                     <i class="fa fa-stop-circle" title="Stop" ng-click="stop()"></i>
+                    &nbsp;
+                    <i class="fa fa-video-camera" title="Start" ng-click="startVisualization = !startVisualization"></i>
                 </span>
             </div>
         </div>
     </div>
-    <div class="jumbotron channel-container" style="margin: auto;background-color: #818481;position: relative;">
+    <div ng-show="!startVisualization" class="jumbotron channel-container" style="margin: auto;background-color: #818481;position: relative;">
         <div class="scale-bar">
             <i class="fa fa-arrows-h" style="color: #fff;font-size: 26px;" title="scale tracks"></i>&nbsp;
             <input type="range" min="2" max="10" step="1" ng-model="configuration.scale" ng-model-options="{ updateOn: 'default blur', debounce: {'default': 1000, 'blur': 0} }"
@@ -76,16 +78,16 @@
     </div>
 
     <!-- animation -->
-    <div class="row col-12 text-center" style="position:relative">
+    <div ng-if="!!startVisualization" style="padding-top: 80px;" >
         <div ng-style="{'display': showAnim ? 'block' : none }" id="three-container"></div>
-        <div class="row col-12 text-center" style="text-align: center" ng-style="{'display': showVisualization ? 'block' : none }" id="anim">
+        <div ng-style="{'display': showVisualization ? 'block' : none }" id="anim">
             <button onclick="toggleMoveCamera()">Toggle move camera</button>
             <audio id="sound"></audio>
             <input ng-init="startAnim()" type="file" id="audioInput" />
         </div>
     </div>
 
-
+    <div ng-show="!startVisualization" > 
     <div class="text-center" style="margin-top:10px;">
         <button class="btn btn-success" ng-click="play()">Play</button>
         <button class="btn btn-success" ng-click="pause()">Pause</button>
@@ -115,6 +117,7 @@
         </div>
     </div>
     <hr />
+    </div>
     <!-- <div>
         JSON configuration
         <pre>{{configuration | json}}</pre>

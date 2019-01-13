@@ -1,11 +1,11 @@
-html, body {
-  /* overflow: hidden; */
+body{
+overflow: auto
 }
-
 canvas {
   display: block;
   position: absolute;
-  text-align: center;
+  left: 0;
+  top:0;
   border: none;
   margin: 0;
   z-index: -1;
