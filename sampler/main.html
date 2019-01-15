@@ -47,17 +47,24 @@
             <button id="btn-save" class="btn btn-sm btn-success" ng-click="retrySaving()">Save</button>
             <div class="player-control">
                 <span>
-                    <i class="fa fa-play-circle" title="Play" ng-click="play()"></i>
+                    <i class="fa fa-play-circle" ng-class="{'active': controlFlags.playerStatus === 'START'}" title="Play"
+                        ng-click="play()"></i>
                     &nbsp;
-                    <!-- <i class="fa fa-pause-circle" ng-click="pause()"></i> -->
-                    <i class="fa fa-stop-circle" title="Stop" ng-click="stop()"></i>
+                    <i class="fa fa-pause-circle" ng-class="{'active': controlFlags.playerStatus === 'PAUSE'}" ng-if="controlFlags.playerStatus === 'START'"
+                        ng-click="pause()" title="Pause"></i>
+                    <i class="fa fa-pause-circle" ng-class="{'active': controlFlags.playerStatus === 'PAUSE'}" ng-if="controlFlags.playerStatus === 'PAUSE'"
+                        ng-click="resume()" title="Resume"></i>
+                    <span ng-if="controlFlags.playerStatus === 'START' || controlFlags.playerStatus === 'PAUSE'">&nbsp;</span>
+                    <i class="fa fa-stop-circle" ng-class="{'active': controlFlags.playerStatus === 'STOP' || controlFlags.playerStatus === 'NA'}"
+                        title="Stop" ng-click="stop()"></i>
                     &nbsp;
-                    <i class="fa fa-video-camera" title="Start" ng-click="startVisualization = !startVisualization"></i>
+                    <i class="fa fa-video-camera" ng-class="{'active': controlFlags.startVisualization}" title="Start Visualization"
+                        ng-click="toggleVisualization();"></i>
                 </span>
             </div>
         </div>
     </div>
-    <div ng-show="!startVisualization" class="jumbotron channel-container" style="margin: auto;background-color: #818481;position: relative;">
+    <div class="jumbotron channel-container" style="margin: auto;background-color: #818481;position: relative;">
         <div class="scale-bar">
             <i class="fa fa-arrows-h" style="color: #fff;font-size: 26px;" title="scale tracks"></i>&nbsp;
             <input type="range" min="2" max="10" step="1" ng-model="configuration.scale" ng-model-options="{ updateOn: 'default blur', debounce: {'default': 1000, 'blur': 0} }"
@@ -78,45 +85,45 @@
     </div>
 
     <!-- animation -->
-    <div ng-if="!!startVisualization" style="padding-top: 80px;" >
-        <div ng-style="{'display': showAnim ? 'block' : none }" id="three-container"></div>
-        <div ng-style="{'display': showVisualization ? 'block' : none }" id="anim">
-            <button onclick="toggleMoveCamera()">Toggle move camera</button>
-            <audio id="sound"></audio>
-            <input ng-init="startAnim()" type="file" id="audioInput" />
+    <div ng-if="!!controlFlags.startVisualization" ng-init="startAnim()" class="visualization-area">
+        <div ng-show="controlFlags.showAnim" id="three-container"></div>
+        <div ng-show="controlFlags.showVisualization" id="anim">
+            <!-- <button onclick="toggleMoveCamera()">Toggle move camera</button> -->
+            <!-- <audio id="sound"></audio> -->
+            <!-- <input ng-init="startAnim()" type="file" id="audioInput" /> -->
         </div>
     </div>
 
-    <div ng-show="!startVisualization" > 
-    <div class="text-center" style="margin-top:10px;">
-        <button class="btn btn-success" ng-click="play()">Play</button>
-        <button class="btn btn-success" ng-click="pause()">Pause</button>
-        <button class="btn btn-success" ng-click="resume()">Resume</button>
-        <button class="btn btn-success" ng-click="stop()">Stop</button>
-    </div>
-    <hr />
-    <div>
-        <h5>Load a track from library</h5>
-        <div class="input-group col-5" style="padding: 0px;">
-            <select class="form-control" ng-model="selectedTrack">
-                <option value="">-Select-</option>
-                <option ng-repeat="proj in savedProjects">{{proj}}</option>
-            </select>
-            <span id="btn-load" class="btn btn-app-color input-group-addon" ng-click="loadSelectedTrack(selectedTrack);">Load</span>
-        </div>
-        <div class="col-12" style="font-size: 12px;">
-            <span>Need a new track or better, synthesize one?
-                <a class="text-info" ui-sref="synthesizer" style="font-size: 13px;cursor: pointer;">Go to
-                    synthesizer</a>
-            </span>
-        </div>
-        <h5>Or upload an audio file</h5>
+    <div ng-show="!controlFlags.startVisualization">
+        <!-- <div class="text-center" style="margin-top:10px;">
+            <button class="btn btn-success" ng-click="play()">Play</button>
+            <button class="btn btn-success" ng-click="pause()">Pause</button>
+            <button class="btn btn-success" ng-click="resume()">Resume</button>
+            <button class="btn btn-success" ng-click="stop()">Stop</button>
+        </div> -->
+        <hr />
         <div>
-            <div class="btn btn-app-color" ngf-select="parseFile($file);" ng-model="file" name="file" ngf-pattern="'audio/*'"
-                ngf-accept="'audio/*'" ngf-max-size="10MB">Upload</div>
+            <h5>Load a track from library</h5>
+            <div class="input-group col-5" style="padding: 0px;">
+                <select class="form-control" ng-model="selectedTrack">
+                    <option value="">-Select-</option>
+                    <option ng-repeat="proj in savedProjects">{{proj}}</option>
+                </select>
+                <span id="btn-load" class="btn btn-app-color input-group-addon" ng-click="loadSelectedTrack(selectedTrack);">Load</span>
+            </div>
+            <div class="col-12" style="font-size: 12px;">
+                <span>Need a new track or better, synthesize one?
+                    <a class="text-info" ui-sref="synthesizer" style="font-size: 13px;cursor: pointer;">Go to
+                        synthesizer</a>
+                </span>
+            </div>
+            <h5>Or upload an audio file</h5>
+            <div>
+                <div class="btn btn-app-color" ngf-select="parseFile($file);" ng-model="file" name="file" ngf-pattern="'audio/*'"
+                    ngf-accept="'audio/*'" ngf-max-size="10MB">Upload</div>
+            </div>
         </div>
-    </div>
-    <hr />
+        <hr />
     </div>
     <!-- <div>
         JSON configuration

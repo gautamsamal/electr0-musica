@@ -9,7 +9,8 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
     $scope.controlFlags = {
         ready: false,
         trackLoader: false,
-        retrySaving: false
+        retrySaving: false,
+        playerStatus: 'NA'
     };
 
     $scope.currentProject = {};
@@ -163,24 +164,32 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
     $scope.removeTrack = function (index) {
         if ($scope.configuration.tracks && $scope.configuration.tracks[index]) {
             $scope.configuration.tracks.splice(index, 1);
-            trackIds = 0;
-            $('.track').remove();
-            $('.track-timing').remove();
-            fillConfiguration();
+            _refreshTrack();
         }
     };
 
     $scope.updateScale = function () {
         _updateSecLength();
-        trackIds = 0;
-        $('.track').remove();
-        $('.track-timing').remove();
-        fillTimeLines();
-        fillConfiguration();
+        _refreshTrack();
     };
 
+    function _getMaxTrackTime() {
+        if (!$scope.configuration.tracks || $scope.configuration.tracks.length === 0) {
+            return 0;
+        }
+
+        let maxTime = 0;
+        $scope.configuration.tracks.forEach(track => {
+            track.segments.forEach(seg => {
+                maxTime = Math.max(maxTime, (seg.offset + seg.end - seg.start));
+            });
+        });
+        console.log('Max time----', maxTime);
+        return (maxTime + 10);
+    }
+
     const fillTimeLines = function () {
-        const maxTime = 50 || 0;
+        const maxTime = Math.max(_getMaxTrackTime(), 50);
         $('#editor-panel .scale').html('');
         const panelWidth = $('#editor-panel .scale').width() - 100;
         const secPanels = Math.max(parseInt(panelWidth / secLength), parseInt(maxTime));
@@ -475,8 +484,7 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
                 end: buffer.duration,
                 offset: 0
             });
-            _addTrack(track, $scope.configuration.tracks.length - 1);
-            _addTrackElems(track);
+            _refreshTrack();
             console.log(track);
             alert('Track is added.');
             $scope.controlFlags.ready = true;
@@ -520,8 +528,7 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
                 };
 
                 $scope.configuration.tracks.push(track);
-                _addTrack(track, $scope.configuration.tracks.length - 1);
-                _addTrackElems(track);
+                _refreshTrack();
                 console.log(track);
                 alert('Track is added.');
                 $scope.controlFlags.ready = true;
@@ -591,27 +598,67 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
     }
     $scope.stop = function () {
         MainLinePlayer.stop($scope.configuration.tracks);
+        $scope.controlFlags.startVisualization = false;
+        $('body').removeClass('full-body');
     }
 
     function _digest() {
         $scope.$digest();
     }
-    
-    $scope.startAnim = function() {
+
+    /**
+     * Toggle visualization and cover body to make it fixed.
+     */
+    $scope.toggleVisualization = function () {
+        $scope.controlFlags.startVisualization = !$scope.controlFlags.startVisualization;
+        $('body').removeClass('full-body');
+        if ($scope.controlFlags.startVisualization) {
+            $('body').addClass('full-body');
+        }
+    };
+
+    $scope.startAnim = function () {
         startAnim();
-        window.showThreeContainer = function(){
-            $scope.showAnim = true;  
+        window.showThreeContainer = function () {
+            $scope.controlFlags.showAnim = true;
+            _digest();
         }
         window.toggleScene = () => {
-          $scope.showVisualization = true;
-          $scope.showAnim = false;
-          setupVS();
+            $scope.controlFlags.showVisualization = true;
+            $scope.controlFlags.showAnim = false;
+            $scope.play();
+            setupVS(MainLinePlayer.currentAnalyser);
+            _digest();
         }
     }
 
-    _fetchCurrentProject(function () {
+    // Listen to player events
+    $scope.$on('Player:Event', (e, operation) => {
+        $scope.controlFlags.playerStatus = operation;
+        if (operation === 'STOP') {
+            $scope.controlFlags.startVisualization = false;
+            $('body').removeClass('full-body');
+        }
+        _digest();
+    });
+
+    $scope.$on('$destroy', () => {
+        $scope.stop();
+        //Unbind global event handlers
+        window.showThreeContainer = () => { };
+        window.toggleScene = () => { };
+    });
+
+    function _refreshTrack() {
+        trackIds = 0;
+        $('.track').remove();
+        $('.track-timing').remove();
         fillTimeLines();
-        fillConfiguration();
+        fillConfiguration()
+    }
+
+    _fetchCurrentProject(function () {
+        _refreshTrack();
         $scope.loadSavedTracks();
         updateContextMenu();
         $scope.controlFlags.ready = true;
