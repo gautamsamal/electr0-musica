@@ -136,9 +136,13 @@ class AudioChannel {
                 this.duration = 1;
             }
         }
-        this.totalDuration = (this.originalDelay || 0) + (this.duration);
+        this.loopDuration = (this.originalDelay || 0) + (this.duration);
+        // Repeat duration. Will force repeat at after this time since playback + delay
+        if (this.loopAfterSec && this.loopAfterSec > 0) {
+            this.loopDuration = (this.originalDelay || 0) + parseFloat(this.loopAfterSec);
+        }
         // For first time, we will wait extra startAfter
-        this.nextPlayTime = parseFloat(this.totalDuration) + (this.startAfter || 0);
+        this.nextPlayTime = parseFloat(this.loopDuration) + (this.startAfter || 0);
     }
 
     /**
@@ -153,7 +157,7 @@ class AudioChannel {
                 this.startAfter = 0;
                 // this.delay = this.nextPlayTime + this.originalDelay;
                 playback.call(this, context);
-                this.nextPlayTime = parseFloat(this.nextPlayTime + this.totalDuration);
+                this.nextPlayTime = parseFloat(this.nextPlayTime + this.loopDuration);
             }
         });
         this.timerWorker.postMessage("start");
@@ -472,7 +476,7 @@ angular.module('mainApp').factory('SynthV2Factory', ($rootScope) => {
         }
         let playduration = service.playduration || 0;
         if (!channel.loop) {
-            service.playduration = Math.max(service.playduration, parseFloat(channel.totalDuration + channel.startAfter || 0));
+            service.playduration = Math.max(service.playduration, parseFloat(channel.loopDuration + channel.startAfter || 0));
             return;
         }
         if (!(channel.limitRepeatCount && channel.limitRepeatCount > 0)
@@ -483,7 +487,7 @@ angular.module('mainApp').factory('SynthV2Factory', ($rootScope) => {
         }
         if (channel.limitRepeatCount && channel.limitRepeatCount > 0) {
             service.playduration =
-                Math.max(service.playduration, parseFloat((channel.totalDuration * channel.limitRepeatCount) + channel.startAfter || 0));
+                Math.max(service.playduration, parseFloat((channel.loopDuration * channel.limitRepeatCount) + channel.startAfter || 0));
         }
 
         if (channel.limitRepeatSec && channel.limitRepeatSec > 0) {

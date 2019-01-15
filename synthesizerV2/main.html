@@ -165,7 +165,14 @@
                             </div>
                         </div>
                         <div ng-if="channel.loop">
-                            <label>Repeat till</label>
+                            <label>Repeat At</label>
+                            <div>
+                                <input class="time-input" restrict-scroll type="number" min="0" ng-model="channel.loopAfterSec" />
+                                sec(s)
+                            </div>
+                        </div>
+                        <div ng-if="channel.loop">
+                            <label>Repeat End</label>
                             <div>
                                 <input class="time-input" restrict-scroll type="number" min="0" ng-model="channel.limitRepeatSec" />
                                 sec(s)
