@@ -422,6 +422,9 @@ angular.module('mainApp').factory('SynthV2Factory', ($rootScope) => {
             });
 
             // Auto stop context
+            if (recordTime) {
+                return;
+            }
             console.log('Will auto stop at ', service.playduration);
             if (service.playduration !== null && service.playduration !== -1) {
                 _scheduleAutoStop(context);
