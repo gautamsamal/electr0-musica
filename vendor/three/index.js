@@ -14,15 +14,15 @@ function setupVS(analyser) {
   //When the user chooses audio to visualise, this function is called.
   //It starts playing the music, hides the input, and calls createAudioObjects.
   // audioInput.onchange = function () {
-  //   let sound = document.getElementById("sound");
-  //   let reader = new FileReader();
-  //   reader.onload = function (e) {
-  //     sound.src = this.result;
-  //     sound.controls = true;
-  //     sound.play();
-  //   };
-  //   reader.readAsDataURL(this.files[0]);
-  //   createAudioObjects();
+  // let sound = document.getElementById("sound");
+  // let reader = new FileReader();
+  // reader.onload = function (e) {
+  // sound.src = this.result;
+  // sound.controls = true;
+  // sound.play();
+  // };
+  // reader.readAsDataURL(this.files[0]);
+  // createAudioObjects();
   // };
 
   //Connects the audio source to the analyser and creating a suitably sized array to hold the frequency data.
@@ -156,7 +156,9 @@ function setupVS(analyser) {
         r += 25;
       }
       theta = j == 7 ? 0 : (theta + 360 / 7);
-
+      if (j == 14) {
+        theta += 25;
+      }
       segmentGeometryArray.push(new THREE.SphereGeometry(3, 50, 50, 0, Math.PI * 2, 0, Math.PI * 2));
 
       segmentMaterialArray.push(new THREE.MeshStandardMaterial({
@@ -178,7 +180,7 @@ function setupVS(analyser) {
 
     segmentMaterialArray.push(new THREE.MeshStandardMaterial({
       color: new THREE.Color("pink"),
-      roughness: 0.2, metalness: 1.0
+      roughness: 0.2, metalness: 1.0, wireframe: true
     }));
 
     segmentsArray.push(new THREE.Mesh(segmentGeometryArray[21], segmentMaterialArray[21]));
@@ -204,17 +206,18 @@ function setupVS(analyser) {
     setUpAllArrays();
   }
 
+  var startDate = new Date();
   //Code to animate the visualisation.
   function updateMeshes() {
 
     let sampleLevel = 0.5;
     //Carefully access the soundDataArray, as it doesn't exist until the user selects a sound file.
     if ((soundDataArray === undefined) == false) {
-      sampleLevel = getSampleOfSoundData(1, 1, soundDataArray);
+      sampleLevel = getSampleOfSoundData(0, 1, soundDataArray);
       if (!!isMoveCamera)
         moveCamera(0.5 + sampleLevel);
     }
-    segmentsArray[21].scale.set(1 + sampleLevel * (5), 1 + sampleLevel * (5), 1 + sampleLevel * (5));
+    segmentsArray[21].scale.set(1 + sampleLevel * (10), 1 + sampleLevel * (10), 1 + sampleLevel * (10));
 
     for (let i = 0; i < 7; i++) {
       let sampleLevel = 1;
@@ -222,6 +225,13 @@ function setupVS(analyser) {
       //Carefully access the soundDataArray, as it doesn't exist until the user selects a sound file.
       if ((soundDataArray === undefined) == false) {
         sampleLevel = getSampleOfSoundData(0, 7, soundDataArray);
+      }
+      if (sampleLevel && !isMoveCamera) {
+        var endDate = new Date();
+        var seconds = (endDate.getTime() - startDate.getTime()) / 1000;
+        console.log(seconds);
+        if (seconds >= 20)
+          isMoveCamera = true;
       }
 
       segmentsArray[i].scale.set(0.5 + sampleLevel * (4), 0.5 + sampleLevel * (4), 0.5 + sampleLevel * (4));
@@ -235,11 +245,11 @@ function setupVS(analyser) {
 
       //Carefully access the soundDataArray, as it doesn't exist until the user selects a sound file.
       if ((soundDataArray === undefined) == false) {
-        sampleLevel = getSampleOfSoundData(i < 14 ? 7 : 14, 14, soundDataArray);
+        sampleLevel = getSampleOfSoundData(0, 7, soundDataArray);
       }
 
       segmentsArray[i].scale.set(0.5 + sampleLevel * (4), 0.5 + sampleLevel * (4), 0.5 + sampleLevel * (4));
-      segmentsArray[i].theta += sampleLevel * 2;
+      segmentsArray[i].theta += 0.5 + sampleLevel * 2;
       segmentsArray[i].position.x = (segmentsArray[i].r + sampleLevel * 2) * Math.cos((segmentsArray[i].theta + 1) * Math.PI / 180);
       segmentsArray[i].position.y = (segmentsArray[i].r + sampleLevel * 2) * Math.sin((segmentsArray[i].theta + 1) * Math.PI / 180);
     }

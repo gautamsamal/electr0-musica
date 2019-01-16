@@ -90,7 +90,7 @@ function startAnim() {
 	}
 
 	function createTextAnimation(font) {
-		var text = 'PROJECT JARRE';
+		var text = 'GREEN STUDIO';
 
 		var params = {
 			size: 36,
@@ -688,7 +688,7 @@ function startAnim() {
 				resume();
 				music.play();
 				setTimeout(function () {
-					responsiveVoice.speak("Project JARRE Presents", "UK English Male", {
+					responsiveVoice.speak("Green Studio Presents", "UK English Male", {
 						pitch: 1, onend: function () {
 						}
 					});
