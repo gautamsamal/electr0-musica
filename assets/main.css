@@ -207,6 +207,7 @@ body {
     cursor: pointer;
     overflow: hidden;
     position: absolute;
+    bottom: 0;
 }
 
 .tracker .start, .tracker .end {

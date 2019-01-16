@@ -122,7 +122,8 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
                 trackCopy.segments.push({
                     start: seg.start,
                     end: seg.end,
-                    offset: seg.offset
+                    offset: seg.offset,
+                    amp: seg.amp
                 });
             });
 
@@ -389,6 +390,9 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
                 if (resized) {
                     const leftChange = +(((trackerElem[0].offsetLeft - seg.left) / secLength).toFixed(2));
                     seg.start += leftChange;
+                    if (seg.start < 0) {
+                        seg.start = 0;
+                    }
                     console.log('Left change : ', leftChange);
 
                     if (!leftChange) {
