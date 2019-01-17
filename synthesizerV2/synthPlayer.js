@@ -378,7 +378,7 @@ class AudioChannel {
     };
 }
 
-angular.module('mainApp').factory('SynthV2Factory', ($rootScope) => {
+angular.module('mainApp').factory('SynthV2Factory', ($rootScope, ngToast) => {
     const service = {
         currentContext: null,
         playduration: null
@@ -431,7 +431,10 @@ angular.module('mainApp').factory('SynthV2Factory', ($rootScope) => {
             }
         }).catch(err => {
             console.log(err);
-            alert('Error while processing channels');
+            ngToast.create({
+                className: 'danger',
+                content: 'Error while processing channels.'
+            });
         });
     };
 

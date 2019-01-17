@@ -1,4 +1,4 @@
-angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http, $state, $compile, $timeout, MainLinePlayer) => {
+angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http, $state, $compile, $timeout, MainLinePlayer, ngToast) => {
 
     let secLength = 80;
     const maxHeight = 60;
@@ -27,7 +27,10 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
     function _fetchCurrentProject(callback) {
         const projectName = window.localStorage.getItem('currentProject');
         if (!projectName) {
-            alert('No recent project found');
+            ngToast.create({
+                className: 'danger',
+                content: 'No recent project found.'
+            });
             $state.go('welcome');
             return;
         }
@@ -49,7 +52,10 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
             }
             _checkAllTracks(callback);
         }).catch(err => {
-            alert('Error while fetching recent project');
+            ngToast.create({
+                className: 'danger',
+                content: 'Error while fetching recent project.'
+            });
             console.error(err);
             $state.go('welcome');
         });
@@ -138,7 +144,10 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         }).catch(() => {
             console.error('Problem while saving the project.');
             if (manual) {
-                alert('Error while saving the project');
+                ngToast.create({
+                    className: 'danger',
+                    content: 'Error while saving the project.'
+                });
             }
             $scope.controlFlags.retrySaving = true;
         });
@@ -340,7 +349,10 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         segmentNo = parseInt(segmentNo);
         const track = $scope.configuration.tracks.find(t => t.id === trackId);
         if (!track) {
-            alert('Invalid Track');
+            ngToast.create({
+                className: 'danger',
+                content: 'Invalid Track.'
+            });
             return;
         }
 
@@ -353,7 +365,10 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
     function addTrackSegment(trackId) {
         const track = $scope.configuration.tracks.find(t => t.id === trackId);
         if (!track) {
-            alert('Invalid Track');
+            ngToast.create({
+                className: 'danger',
+                content: 'Invalid Track.'
+            });
             return;
         }
 
@@ -489,14 +504,19 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
                 offset: 0
             });
             _refreshTrack();
-            console.log(track);
-            alert('Track is added.');
+            ngToast.create({
+                className: 'success',
+                content: 'Track is added.'
+            });
             $scope.controlFlags.ready = true;
             _digest();
         }).catch(err => {
             console.error(err);
             $scope.controlFlags.ready = true;
-            alert('Some error ocuured');
+            ngToast.create({
+                className: 'danger',
+                content: 'Some error ocuured.'
+            });
         });
     };
 
@@ -504,7 +524,10 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         $http.get('/api/synthesizer/list').then(res => {
             $scope.savedProjects = res.data;
         }).catch(err => {
-            alert('Can not load saved project. Check console for errors!');
+            ngToast.create({
+                className: 'danger',
+                content: 'Can not load saved project. Check console for errors!'
+            });
         });
     };
 
@@ -514,7 +537,10 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
             const base64Src = Utils.arrayBufferToBase64(arrayBuffer);
             Utils.base64ToAudioBuffer(base64Src, function (err, audioBuffer) {
                 if (err) {
-                    alert('Unable to parse audio file');
+                    ngToast.create({
+                        className: 'danger',
+                        content: 'Unable to parse audio file.'
+                    });
                     $scope.controlFlags.ready = true;
                     return;
                 }
@@ -534,7 +560,10 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
                 $scope.configuration.tracks.push(track);
                 _refreshTrack();
                 console.log(track);
-                alert('Track is added.');
+                ngToast.create({
+                    className: 'success',
+                    content: 'Track is added.'
+                });
                 $scope.controlFlags.ready = true;
                 _digest();
             });

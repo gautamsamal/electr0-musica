@@ -1,6 +1,6 @@
-const mainApp = angular.module('mainApp', ['ngFileUpload', 'ui.router']);
+const mainApp = angular.module('mainApp', ['ngFileUpload', 'ui.router', 'ngToast']);
 
-mainApp.config(function ($stateProvider, $locationProvider, $urlRouterProvider) {
+mainApp.config(function ($stateProvider, $locationProvider, $urlRouterProvider, ngToastProvider) {
     // $locationProvider.html5Mode(true);
     $urlRouterProvider.otherwise('/');
 
@@ -25,6 +25,12 @@ mainApp.config(function ($stateProvider, $locationProvider, $urlRouterProvider) 
     $stateProvider.state(welcomePage);
     $stateProvider.state(sampler);
     $stateProvider.state(synthesizer);
+
+    ngToastProvider.configure({
+        verticalPosition: 'top',
+        horizontalPosition: 'right',
+        animation: 'slide'
+    });
 });
 
 mainApp.run(($rootScope) => {
@@ -37,7 +43,7 @@ mainApp.run(($rootScope) => {
     });
 });
 
-mainApp.controller('MainCtrl', ($rootScope, $scope, $http, $state) => {
+mainApp.controller('MainCtrl', ($rootScope, $scope, $http, $state, ngToast) => {
     // $scope.appMode = 'Sounds';
     // $scope.appMode = 'Editor';
     // $scope.appMode = 'MainLine';
@@ -55,11 +61,17 @@ mainApp.controller('MainCtrl', ($rootScope, $scope, $http, $state) => {
             projectName: name,
             configuration: {}
         }).then(() => {
-            alert('Project is created.');
+            ngToast.create({
+                className: 'success',
+                content: 'Project is created.'
+            });
             window.localStorage.setItem('currentProject', name);
             $state.go('sampler');
         }).catch(() => {
-            alert('Problem while creating the project.');
+            ngToast.create({
+                className: 'danger',
+                content: 'Problem while creating the project.'
+            });
         });
     };
 
@@ -73,11 +85,17 @@ mainApp.controller('MainCtrl', ($rootScope, $scope, $http, $state) => {
                 projectName: name
             }
         }).then((response) => {
-            alert('Project is loaded.');
+            ngToast.create({
+                className: 'success',
+                content: 'Project is loaded.'
+            });
             window.localStorage.setItem('currentProject', name);
             $state.go('sampler');
         }).catch(() => {
-            alert('Problem while loading the project.');
+            ngToast.create({
+                className: 'danger',
+                content: 'Problem while loading the project.'
+            });
         })
     };
 
@@ -86,7 +104,10 @@ mainApp.controller('MainCtrl', ($rootScope, $scope, $http, $state) => {
         $http.get('/api/project', {}).then((response) => {
             $scope.allProjects = response.data;
         }).catch(() => {
-            alert('Problem while fectching projects.');
+            ngToast.create({
+                className: 'danger',
+                content: 'Problem while fetching projects.'
+            });
         })
     }
 

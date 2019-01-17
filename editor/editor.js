@@ -1,4 +1,4 @@
-angular.module('mainApp').controller('EditorCtrl', ($rootScope, $scope, SoundFactory) => {
+angular.module('mainApp').controller('EditorCtrl', ($rootScope, $scope, SoundFactory, ngToast) => {
     $scope.allNotes = Object.keys($rootScope.keyNotes);
 
     const trackSource = ['basic', 'music'];
@@ -51,7 +51,10 @@ angular.module('mainApp').controller('EditorCtrl', ($rootScope, $scope, SoundFac
         segmentNo = parseInt(segmentNo);
         const track = $scope.configuration.tracks.find(t => t.id === trackId);
         if (!track) {
-            alert('Invalid Track');
+            ngToast.create({
+                className: 'danger',
+                content: 'Invalid Track.'
+            });
             return;
         }
 
@@ -64,7 +67,10 @@ angular.module('mainApp').controller('EditorCtrl', ($rootScope, $scope, SoundFac
     const addTrackSegment = function (trackId) {
         const track = $scope.configuration.tracks.find(t => t.id === trackId);
         if (!track) {
-            alert('Invalid Track');
+            ngToast.create({
+                className: 'danger',
+                content: 'Invalid Track.'
+            });
             return;
         }
 

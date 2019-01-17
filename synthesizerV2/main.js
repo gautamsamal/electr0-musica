@@ -1,4 +1,4 @@
-angular.module('mainApp').controller('SynthV2Ctrl', ($rootScope, $scope, $http, Upload, SynthV2Factory) => {
+angular.module('mainApp').controller('SynthV2Ctrl', ($rootScope, $scope, $http, Upload, SynthV2Factory, ngToast) => {
     $scope.currentProject = {
         channels: []
     };
@@ -76,7 +76,10 @@ angular.module('mainApp').controller('SynthV2Ctrl', ($rootScope, $scope, $http, 
         };
         request.onerror = function (err) {
             console.log("** An error occurred during the XHR request");
-            alert('Unable to load the audio from URL');
+            ngToast.create({
+                className: 'danger',
+                content: 'Unable to load the audio from URL.'
+            });
         };
         request.send();
     };
@@ -90,7 +93,10 @@ angular.module('mainApp').controller('SynthV2Ctrl', ($rootScope, $scope, $http, 
             });
         }).catch(err => {
             console.error(err);
-            alert('Unable to parse the file. Try again.')
+            ngToast.create({
+                className: 'danger',
+                content: 'Unable to parse the file. Try again.'
+            });
         })
     };
 
@@ -107,13 +113,19 @@ angular.module('mainApp').controller('SynthV2Ctrl', ($rootScope, $scope, $http, 
             $scope.currentProject.channels = res.data.channels;
             $scope.currentProject.trackId = res.data.trackId;
             $scope.selectedProjectName = '';
-            alert('Project loaded successfully');
+            ngToast.create({
+                className: 'success',
+                content: 'Project loaded successfully.'
+            });
 
             if ($scope.currentProject.trackId) {
                 _loadTrack();
             }
         }).catch(err => {
-            alert('Can not load the selected project. Check console for errors!');
+            ngToast.create({
+                className: 'danger',
+                content: 'Can not load the selected project. Check console for errors!'
+            });
         });
     };
 
@@ -137,16 +149,25 @@ angular.module('mainApp').controller('SynthV2Ctrl', ($rootScope, $scope, $http, 
                 $scope.currentProject.trackId = res.data.trackId;
             }
             _loadSavedConfigs();
-            alert('Successfully updated');
+            ngToast.create({
+                className: 'success',
+                content: 'Successfully updated.'
+            });
         }).catch(err => {
-            alert('Can not load the selected project. Check console for errors!');
+            ngToast.create({
+                className: 'danger',
+                content: 'Can not load the selected project. Check console for errors!'
+            });
         });
     };
 
     $scope.updateProjectWithTrack = function () {
         //TODO Check for recording
         if (!$scope.recording.base64Src) {
-            alert('No recorded buffer found. Please record and then try to save.');
+            ngToast.create({
+                className: 'danger',
+                content: 'No recorded buffer found. Please record and then try to save.'
+            });
             return;
         }
 
@@ -157,7 +178,10 @@ angular.module('mainApp').controller('SynthV2Ctrl', ($rootScope, $scope, $http, 
         $http.get('/api/synthesizer/list').then(res => {
             $scope.savedProjects = res.data;
         }).catch(err => {
-            alert('Can not load saved project. Check console for errors!');
+            ngToast.create({
+                className: 'danger',
+                content: 'Can not load saved project. Check console for errors!'
+            });
         });
     }
 

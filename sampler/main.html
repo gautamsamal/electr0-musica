@@ -42,6 +42,9 @@
 <div id="editor" ng-controller="MainLineCtrl">
     <div class="project-header text-center">
         <div style="position: relative;">
+            <div style="float: left;margin-left:15px;">
+                <a style="cursor: pointer;color: #2f8a2f;" ui-sref="welcome" title="Home"><i class="fa fa-home"></i></a>
+            </div>
             <span>{{currentProject.projectName}} - Main Line</span>
             <span class="project-state" ng-class="controlFlags.ready ? 'ready' : 'not-ready'" title="{{ controlFlags.ready ? 'Ready' : 'Not Ready'}}">&nbsp;&nbsp;&nbsp;&nbsp;</span>
             <button id="btn-save" class="btn btn-sm btn-success" ng-click="retrySaving()">Save</button>
