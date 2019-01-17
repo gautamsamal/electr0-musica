@@ -229,8 +229,7 @@ function setupVS(analyser) {
       if (sampleLevel && !isMoveCamera) {
         var endDate = new Date();
         var seconds = (endDate.getTime() - startDate.getTime()) / 1000;
-        console.log(seconds);
-        if (seconds >= 20)
+        if (seconds >= 15)
           isMoveCamera = true;
       }
 

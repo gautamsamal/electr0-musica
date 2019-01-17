@@ -88,10 +88,10 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
             promiseArr.push(_loadSelectedTrack(track.synthName).then(({ trackInfo, buffer }) => {
                 track.loaded = true;
                 track.audioBuffer = buffer;
-                if (track.duration !== buffer.duration) {
-                    track.error = true;
-                    track.errorMessage = 'Duration mismatch';
-                }
+                // if (track.duration !== buffer.duration) {
+                // track.error = true;
+                // track.errorMessage = 'Duration mismatch';
+                // }
             }).catch(err => {
                 track.error = true;
                 track.errorMessage = err.message ? err.message : String(err);
@@ -591,8 +591,11 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
 
     // Player related functions
 
-    $scope.play = function () {
-        MainLinePlayer.loadPlayback($scope.configuration.tracks, secLength);
+    $scope.play = function (delay = 0, callback) {
+        setTimeout(function () {
+            MainLinePlayer.loadPlayback($scope.configuration.tracks, secLength);
+            callback && callback();
+        }, delay);
     }
     $scope.pause = function () {
         MainLinePlayer.pause($scope.configuration.tracks);
@@ -630,9 +633,10 @@ angular.module('mainApp').controller('MainLineCtrl', ($rootScope, $scope, $http,
         window.toggleScene = () => {
             $scope.controlFlags.showVisualization = true;
             $scope.controlFlags.showAnim = false;
-            $scope.play();
-            setupVS(MainLinePlayer.currentAnalyser);
-            _digest();
+            $scope.play(1500, function () {
+                setupVS(MainLinePlayer.currentAnalyser);
+                _digest();
+            });
         }
     }
 

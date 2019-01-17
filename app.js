@@ -28,7 +28,7 @@ mainApp.config(function ($stateProvider, $locationProvider, $urlRouterProvider) 
 });
 
 mainApp.run(($rootScope) => {
-    $rootScope.appName = 'Electro Musica';
+    $rootScope.appName = 'Green Studio';
     $rootScope.keyNotes = {};
 
     // Load notes JSON
