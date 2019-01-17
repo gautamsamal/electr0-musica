@@ -682,7 +682,7 @@ function startAnim() {
 			TweenMax.to(tween, 0.1, {
 				timeScale: 0
 			});
-			window.music = new Audio('http://responsivevoice.org/wp-content/uploads/2015/06/Peppy-The-Firing-Squad_YMXB-160.mp3');
+			window.music = new Audio('assets/Peppy-The-Firing-Squad_YMXB-160.mp3');
 			setTimeout(function () {
 				showThreeContainer();
 				resume();
